@@ -31,8 +31,7 @@ the first one I am aiming for:
 
 `Define Function signature. to be Function definition. .`
 
-### Little Scribbler
-
-Or just scribbler, is my compiler for Little Scribe. It is implemented in
-Python because a fast to write, widely used language that I know and that
-shares some characteristics of Little Scribe.
+### Scribbler
+This is my compiler for Little Scribe. It is implemented in Python because it
+is fast to write, widely used language that I know and that shares some
+characteristics of Little Scribe.

@@ -9,12 +9,7 @@ import re
 import string
 
 
-class Token:
-    """Repersents a 'word' of input."""
-
-    def __init__(self, kind, text):
-        self.kind = kind
-        self.text = text
+from tree import Token
 
 
 class Tokeniser:
@@ -47,19 +42,6 @@ class Tokeniser:
                         source_string[token_match.end():])
         else:
             return (None, source_string)
-
-
-class TokenStream:
-    """The basic TokenStream."""
-
-    def __init__(self):
-        pass
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        pass
 
 
 def line_token_stream(line_text):
