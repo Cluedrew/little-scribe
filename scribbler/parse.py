@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-
+"""The parser for Little Scribe."""
 
 import sys
 
 
+from scope import (
+    Scope,
+    )
 from Tree import (
     Paragraph,
     Sentence,
@@ -23,81 +26,103 @@ class UnfinishedSentencesError(Exception):
         return 'UnfinshedSentencesError({})'.format(self.count)
 
 
-class LookaheadIterator:
+class ParseError(Exception):
+    """Base Exception for the parse modual."""
 
-    def __init__(self, base_iterator, max_lookahead=1):
-        self.base_iterator = base_iterator
-        self.max_lookahead = max_lookahead
-        self.cur_lookahead = 0
-        self.stored_values = []
+
+class SentenceMisMatchError(ParseError):
+    """A Sentence does not match any in the scope."""
+
+
+class SentenceUnfinisedError(ParseError):
+    """A Sentence was not finished."""
+
+
+class ParseIter:
+    """A convenience iterator for internal use in the Parser."""
+
+    def __init__(self, parser):
+        self.parser = parser
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if 0 == self.cur_lookahead:
-            return next(self.base_iterator)
-        else:
-            self.cur_lookahead -= 1
-            return self.stored_values.pop(0)
-
-    def __peek__(self, lookahead=0):
-        # The checks maybe should be impoved.
-        # I think the exception types might be wrong.
-        if not isinstance(amount, int):
-            raise TypeError()
-        elif lookahead < 0:
-            raise IndexError()
-        elif self.max_lookahead <= lookahead:
-            raise IndexError()
-        if lookahead < self.cur_lookahead:
-            return self.stored_values[lookahead]
-        # ... fill in the remaining values ...
-
-
-def peek(lookahead_iterator, lookahead=0):
-    # Add a default argument like next.
-    lookahead_iterator.__peek__(lookahead)
-
-
-class ParseError(Exception):
-    """Base Exception for the parse modual."""
+        return self.parser._next_token
 
 
 class Parser:
+    """This class repersents a parser."""
 
-    @staticmethod
-    def parse_paragraph(scope, token_stream):
+    def __init__(self, token_stream):
+        self.token_stream = token_stream
+        self.head = None
+        self._token_iterator = ParseIter(self)
+
+    def _next_token(self):
+        """Get the next token, either from the stream or the stored head."""
+        if self.parser.head is not None:
+            token = self.parser.head
+            self.parser.head = None
+            return token
+        return next(self.parser.token_stream)
+
+    def _push_back(self, token):
+        """Return a token to the front of the stream."""
+        if self.head is None:
+            self.head = token
+        else:
+            raise ValueError('There is already a old head.')
+
+    def _stream_not_empty(self):
+        """Are there tokens left to parse?"""
+        if self.head is not None:
+            return True
+        try:
+            self._push_back(self._next_token)
+        except StopIteration:
+            return False
+        else:
+            return True
+
+    def parse_page(self):
+        """Parse a page of Little Scribe code."""
+        scope = Scope()
+        while self._stream_not_empty():
+            paragraph = self.parse_paragraph(scope)
+
+    def parse_paragraph(self, scope):
         """Parse a paragraph.
 
-        :param scope:
-        :param token_stream: An iterable that will produce a series of tokens.
-            All the tokens used in to form the paragraph will be drained from
-            the iterable, there may be tokens left over.
+        :param scope: The scope the paragraph is being parsed within.
         :return: A Paragraph"""
-        token = next(token_stream)
-        return Paragraph(
-            Parser.parse_expression(scope, token_stream, token).children)
+        return Paragraph(self.parse_expression(scope).children)
 
-    @staticmethod
-    def parse_expression(scope, token_stream, head=None):
-        """Take a stream of tokens and create an expression.
+    def parse_sentence(self, scope):
+        pass
 
-        Expressions may contain other forms as well.
-        This will use tokens from the stream, but may not empty the stream."""
+    def parse_expression(self, scope):
+        """Parse an expression.
+
+        Expressions may contain other forms as well, a expression is the
+        'other' type of sentence. They must match a known of sentence in
+        the scope.
+
+        :param scope: The scope the expression is being parsed within.
+        :return: A Sentence."""
         children = []
-        if head is not None:
-            children.append(head)
-        for token in token_stream:
+        for token in self._token_iterator:
             if token.kind = 'first-word':
-                children.append(Parser.parse_expression(
-                    scope, token_stream, token))
+                self._push_back(token)
+                # I need a way to check if it should be a expression or a
+                # signature. Is it part of the definition?
+                children.append(self.parse_expression(scope))
                 if not scope.match_prefix(children):
                     raise ParseError('Sentence not matched.')
             elif token.kind = 'word':
                 children.append(token)
                 if not scope.match_prefix(children):
-                    if (children[-1].ends_with_dot and
+                    if (children[-1].ends_with_dot() and
                             scope.match_to_end(children)):
                         return Sentence(children)
                     raise ParseError('Sentence not matched.')
@@ -107,22 +132,22 @@ class Parser:
                     return Sentence(children)
                 else:
                     raise ParseError('Sentence not matched.')
+            else:
+                raise ValueError('Unknown Token.kind: {}'.format(token.kind))
 
-    @staticmethod
-    def parse_signature(token_stream, head=None):
+    def parse_signature(self):
         """Take a stream of tokens and create a Signature.
 
         Signatures have stricter rules than other parts of the language, but
         they are context insensitive and don't have to match definitions.
-        This will use tokens from the stream, but may not empty the stream."""
+        This will use tokens from the stream, but may not empty the stream.
+
+        :return: A Sentence reperesenting the sentence."""
         children = []
-        if head is not None:
-            children.append(head)
-        for token in token_stream:
+        for token in self._token_iterator:
             if token.kind = 'first-word':
                 try:
-                    children.append(
-                        Parser.from_tokens(token_stream, token))
+                    children.append(self.parse_signature())
                 except UnfinishedSentencesError as error:
                     error.inc()
                     raise
@@ -133,10 +158,3 @@ class Parser:
                 return Sentence(children)
             else:
                 raise ValueError('Unknown Token.kind: {}'.format(token.kind))
-
-    def write(self, to=sys.stdout, prefix=''):
-        for child in self.nodes:
-            if isinstance(child, Token):
-                print(prefix, child.kind, file=to)
-            else:
-                child.write(to, prefix + '  ')

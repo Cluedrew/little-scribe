@@ -15,6 +15,21 @@ class Scope:
         self._parent = parent
         self._definitions = []
 
+    def add_definition(self, definition):
+        """Add a new definition to the scope."""
+
+    def merge(self, other):
+        """Merge this Scope with another."""
+
+    def match_first(self, first_word):
+        """Match definitions that start with first_word."""
+
+    def match_prefix(self, prefix):
+        """Match definitions that start with prefix."""
+
+    def match_to_end(self, prefix):
+        """Match definitions that start with prefix up to the period."""
+
 
 class Definition:
     """Repersents a function definition in Little Scribe."""
@@ -60,3 +75,6 @@ class DefinitionMatchGroup:
 
     def __iter__(self):
         return iter(self.matching)
+
+    def __bool__(self):
+        return bool(self.matching)

@@ -23,6 +23,15 @@ class Sentence(ParseTreeNode):
             else:
                 child.write(to, prefix + '  ')
 
+    def ends_with_dot(self):
+        last = self.children[-1]
+        if isinstance(last, Token) and last.kind = 'period':
+            return True
+        elif isinstance(last, Sentence) and last.ends_with_dot():
+            return True
+        else:
+            return False
+
 
 class Paragraph(Sentence):
     """A top level sentence that is not part of another sentence."""
@@ -41,3 +50,6 @@ class Token(ParseTreeNode):
     def __init__(self, kind, text):
         self.kind = kind
         self.text = text
+
+    def write(self, to=sys.stdout, prefix=''):
+        print(prefix, self.text, file=to)
