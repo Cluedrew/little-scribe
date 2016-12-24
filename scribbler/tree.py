@@ -25,7 +25,7 @@ class Sentence(ParseTreeNode):
 
     def ends_with_dot(self):
         last = self.children[-1]
-        if isinstance(last, Token) and last.kind = 'period':
+        if isinstance(last, Token) and last.kind == 'period':
             return True
         elif isinstance(last, Sentence) and last.ends_with_dot():
             return True
@@ -53,3 +53,34 @@ class Token(ParseTreeNode):
 
     def write(self, to=sys.stdout, prefix=''):
         print(prefix, self.text, file=to)
+
+    def __eq__(self, other):
+        if not isinstance(other, Token):
+            raise TypeError('Tokens can only be equal to other Tokens.')
+        return (self.kind == other.kind) and (self.text == other.text)
+
+    def __repr__(self):
+        return 'Token({!r}, {!r})'.format(self.kind, self.text)
+
+#   @staticmethod
+#   def [new_]period():
+#       return Token('period', '.')
+
+
+class Period(Token):
+
+    def __init__(self):
+        super().__init__('period', '.')
+
+
+class FirstToken(Token):
+
+    def __init__(self, text):
+        super().__init__('first-word', text)
+
+
+class WordToken(Token):
+
+    def __init__(self, text):
+        super().__init__('word', text)
+

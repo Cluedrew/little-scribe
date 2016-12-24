@@ -16,7 +16,9 @@ class Scope:
         self._definitions = []
 
     def add_definition(self, definition):
-        """Add a new definition to the scope."""
+        """Add a new definition to the scope.
+
+        It must not conflict with any existing definition in the scope."""
 
     def merge(self, other):
         """Merge this Scope with another."""
@@ -31,10 +33,26 @@ class Scope:
         """Match definitions that start with prefix up to the period."""
 
 
+class SubSentence:
+    """Repersents a sub-sentence in a function signature."""
+
+    def __init__(self, value):
+        self.value = value
+
+
+sub_signature = SubSentence(True)
+sub_expression = SubSentence(False)
+
+
 class Definition:
     """Repersents a function definition in Little Scribe."""
 
     def __init__(self, signature, body):
+        """Create the definition from its signature and the code body.
+
+        :param signature: A list that repersents the signature.
+        :param body: A callable that repersents the operation the definition
+            preforms on its parameters."""
         self.sig = signature
         self.body = body
 
@@ -42,11 +60,11 @@ class Definition:
         """Evaluate the function for a given set of arguments."""
         return self.body(args)
 
-    def __getitem__(self, index)
+    def __getitem__(self, index):
         if isinstance(index, int):
             return self.sig[index]
         else:
-            raise IndexError()
+            raise TypeError()
 
     def __len__(self):
         return len(self.sig)
