@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""The various types that repersent nodes in the parse tree."""
 
 import sys
 
@@ -62,25 +63,15 @@ class Token(ParseTreeNode):
     def __repr__(self):
         return 'Token({!r}, {!r})'.format(self.kind, self.text)
 
-#   @staticmethod
-#   def [new_]period():
-#       return Token('period', '.')
+    # Short cuts for making tokens.
+    @staticmethod
+    def new_period():
+        return Token('period', '.')
 
+    @staticmethod
+    def new_first(text):
+        return Token('first-word', text)
 
-class Period(Token):
-
-    def __init__(self):
-        super().__init__('period', '.')
-
-
-class FirstToken(Token):
-
-    def __init__(self, text):
-        super().__init__('first-word', text)
-
-
-class WordToken(Token):
-
-    def __init__(self, text):
-        super().__init__('word', text)
-
+    @staticmethod
+    def new_word(text):
+        return Token('word', text)
