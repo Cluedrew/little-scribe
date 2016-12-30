@@ -45,9 +45,9 @@ class Scope:
                 if existing.has_conflicts(definition):
                     raise ValueError('Conflicting definitions in merging '
                                      'scopes.')
-           else:
-               # This is adding to the same list its reading from.
-               self._definitions.append(definition)
+            else:
+                # This is adding to the same list its reading from.
+                self._definitions.append(definition)
 
     def match_first(self, first_word):
         """Match definitions that start with first_word."""
@@ -136,6 +136,19 @@ class DefinitionMatchGroup:
             if match[at] == word:
                 new_matching.append(self.matching[index])
         return DefinitionMatchGroup(new_matching, self.prefix + [word])
+
+    def cur_sub_sentence_type(self):
+        """Get the type of sub-sentence to be parsed after matching prefix."""
+        sentence_type = None
+        place = len(self.prefix)
+        for definition in self.matching:
+            if isinstance(definition[at], SubSentence):
+                if sentence_type is None:
+                    sentence_type = definition[at]
+                elif sentence_type != definition[at]:
+                    raise Exception('Conficting SubSentence type: '
+                                    'Improper DefinitionMatchGroup')
+        return sentence_type
 
     def __len__(self):
         return len(self.matching)

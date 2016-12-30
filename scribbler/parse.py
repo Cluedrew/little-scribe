@@ -7,7 +7,7 @@ import sys
 from scope import (
     Scope,
     )
-from Tree import (
+from tree import (
     Paragraph,
     Sentence,
     Token,
@@ -61,11 +61,11 @@ class Parser:
 
     def _next_token(self):
         """Get the next token, either from the stream or the stored head."""
-        if self.parser.head is not None:
-            token = self.parser.head
-            self.parser.head = None
+        if self.head is not None:
+            token = self.head
+            self.head = None
             return token
-        return next(self.parser.token_stream)
+        return next(self.token_stream)
 
     def _push_back(self, token):
         """Return a token to the front of the stream."""
@@ -79,7 +79,7 @@ class Parser:
         if self.head is not None:
             return True
         try:
-            self._push_back(self._next_token)
+            self._push_back(self._next_token())
         except StopIteration:
             return False
         else:
@@ -96,11 +96,13 @@ class Parser:
 
         :param scope: The scope the paragraph is being parsed within.
         :return: A Paragraph"""
-        return Paragraph(self.parse_expression(scope).children)
+        #return Paragraph(self.parse_expression(scope).children)
+        return Paragraph(self.parse_signature(scope).children)
 
     def parse_sentence(self, scope):
         pass
 
+    # WIP: Useful feature but not needed to get it working.
     def parse_expression(self, scope):
         """Parse an expression.
 
@@ -112,21 +114,21 @@ class Parser:
         :return: A Sentence."""
         children = []
         for token in self._token_iterator:
-            if token.kind = 'first-word':
+            if token.kind == 'first-word':
                 self._push_back(token)
                 # I need a way to check if it should be a expression or a
                 # signature. Is it part of the definition?
                 children.append(self.parse_expression(scope))
                 if not scope.match_prefix(children):
                     raise ParseError('Sentence not matched.')
-            elif token.kind = 'word':
+            elif token.kind == 'word':
                 children.append(token)
                 if not scope.match_prefix(children):
                     if (children[-1].ends_with_dot() and
                             scope.match_to_end(children)):
                         return Sentence(children)
                     raise ParseError('Sentence not matched.')
-            elif token.kind = 'period':
+            elif token.kind == 'period':
                 children.append(token)
                 if scope.match_exact(children):
                     return Sentence(children)
@@ -145,15 +147,15 @@ class Parser:
         :return: A Sentence reperesenting the sentence."""
         children = []
         for token in self._token_iterator:
-            if token.kind = 'first-word':
+            if token.kind == 'first-word':
                 try:
                     children.append(self.parse_signature())
                 except UnfinishedSentencesError as error:
                     error.inc()
                     raise
-            elif token.kind = 'word':
+            elif token.kind == 'word':
                 children.append(token)
-            elif token.kind = 'period':
+            elif token.kind == 'period':
                 children.append(token)
                 return Sentence(children)
             else:
