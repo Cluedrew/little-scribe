@@ -48,7 +48,7 @@ class ParseIter:
         return self
 
     def __next__(self):
-        return self.parser._next_token
+        return self.parser._next_token()
 
 
 class Parser:
@@ -97,7 +97,7 @@ class Parser:
         :param scope: The scope the paragraph is being parsed within.
         :return: A Paragraph"""
         #return Paragraph(self.parse_expression(scope).children)
-        return Paragraph(self.parse_signature(scope).children)
+        return Paragraph(self.parse_signature().children)
 
     def parse_sentence(self, scope):
         pass
@@ -147,13 +147,10 @@ class Parser:
         :return: A Sentence reperesenting the sentence."""
         children = []
         for token in self._token_iterator:
-            if token.kind == 'first-word':
-                try:
-                    children.append(self.parse_signature())
-                except UnfinishedSentencesError as error:
-                    error.inc()
-                    raise
-            elif token.kind == 'word':
+            if token.kind == 'first-word' and children:
+                self._push_back(token)
+                children.append(self.parse_signature())
+            elif token.kind in ('first-word', 'word'):
                 children.append(token)
             elif token.kind == 'period':
                 children.append(token)

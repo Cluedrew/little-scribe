@@ -24,6 +24,12 @@ class Sentence(ParseTreeNode):
             else:
                 child.write(to, prefix + '  ')
 
+#   def __getitem__(self, index):
+#       return self.children[index]
+#
+#   def __len__(self):
+#       return len(self.children)
+
     def ends_with_dot(self):
         last = self.children[-1]
         if isinstance(last, Token) and last.kind == 'period':
