@@ -68,8 +68,27 @@ class Scope:
                 group.matching.append(definition)
         return group
 
-    def match_to_end(self, prefix):
-        """Match definitions that start with prefix up to the period."""
+    def match_to_end(self, sentence):
+        """Match definitions that start with prefix up to the period.
+
+        [The period might become optional at some point.]"""
+        has_period = (isinstance(sentence[-1], Token) and
+                      sentence[-1].kind == 'period')
+        # Go through every definition.
+        for definition in self._definitions:
+            # Search for a mismatch.
+            for (i, word) in enumerate(definition):
+                if word is sub_expression:
+                    if not isinstance(sentence[i], Sentence):
+                        break
+                elif isinstance(word, Token):
+                    if (word.kind != sentence[i].kind or
+                            word.text != sentence[i].text):
+                        break
+            else:
+                return DefinitionMatchGroup(sentence, definition)
+        else:
+            return DefinitionMatchGroup(sentence)
 
 
 class SubSentence:

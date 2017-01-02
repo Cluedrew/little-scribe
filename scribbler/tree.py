@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """The various types that repersent nodes in the parse tree."""
 
+# I think I shouldn't put so much logic here. It just doesn't seem to fit.
+# But where should it go?
+
 import sys
 
 
@@ -8,7 +11,12 @@ class ParseTreeNode:
     """Repersents a node in the parse tree."""
 
     def write(self, to=sys.stdout, prefix=''):
+        """Write the node and its subnodes."""
         print(prefix + '<unknown>', file=to)
+
+    def evaluate(self, scope):
+        """Evaluate the node's value using its contents."""
+        raise NotImplementedError()
 
 
 class Sentence(ParseTreeNode):
@@ -24,11 +32,14 @@ class Sentence(ParseTreeNode):
             else:
                 child.write(to, prefix + '  ')
 
-#   def __getitem__(self, index):
-#       return self.children[index]
-#
-#   def __len__(self):
-#       return len(self.children)
+    def _get_definition(self, scope):
+        """Get the matching definition of this Sentence from the scope."""
+
+    def _evaluate(self, scope):
+        """Evaluate the sentence as a function."""
+
+    def evaluate(self, scope):
+        return self._evaluate(scope)
 
     def ends_with_dot(self):
         last = self.children[-1]

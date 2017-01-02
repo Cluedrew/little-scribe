@@ -17,11 +17,13 @@ WORD_EXP = re.compile('[{0.ascii_lowercase}]+'.format(string))
 FIRST_WORD_EXP = re.compile(
     '[{0.ascii_uppercase}][{0.ascii_lowercase}]*'.format(string))
 PERIOD_EXP = re.compile('\.')
+NUMBER_EXP = re.compile('[{0.digits}]+'.format(string))
 
 token_regexes = {
     'first-word': FIRST_WORD_EXP,
     'word': WORD_EXP,
     'period': PERIOD_EXP,
+    'number': NUMBER_EXP,
     }
 
 

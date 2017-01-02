@@ -7,7 +7,6 @@ that language. This is kind of a joke.
 I am going through with the joke as a learning exersise.
 
 ### Language Definition
-
 The language definition is quite simple at this stage. It is functional and
 dynamically typed.
 
