@@ -1,0 +1,14 @@
+# Syntax Hightlighting for little scribe
+
+syntax "littlescribe" ".lsb$"
+
+# Words that start a sentence.
+color green "[[:upper:]][[:lower:]]*"
+
+# Other words would be "[[:lower:]]+"
+
+# Maybe, define is different, but not structurally.
+color brightgreen "Define"
+
+# Numbers
+color blue "[[:digit:]]+"
