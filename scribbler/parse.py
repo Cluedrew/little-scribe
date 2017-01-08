@@ -38,8 +38,8 @@ class SentenceUnfinisedError(ParseError):
     """A Sentence was not finished."""
 
 
-class ParseIter:
-    """A convenience iterator for internal use in the Parser."""
+class _ParseIter:
+    """A convenience iterator for internal use in Parser."""
 
     def __init__(self, parser):
         self.parser = parser
@@ -57,7 +57,7 @@ class Parser:
     def __init__(self, token_stream):
         self.token_stream = token_stream
         self.head = None
-        self._token_iterator = ParseIter(self)
+        self._token_iterator = _ParseIter(self)
 
     def _next_token(self):
         """Get the next token, either from the stream or the stored head."""
