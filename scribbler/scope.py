@@ -103,7 +103,10 @@ sub_expression = SubSentence(False)
 
 
 class Definition:
-    """Repersents a function definition in Little Scribe."""
+    """Repersents a function definition in Little Scribe.
+
+    A function definition consists of the pattern being defined (the
+    Signature) and what it is being defined to (the body)."""
 
     def __init__(self, signature, body):
         """Create the definition from its signature and the code body.
@@ -177,3 +180,40 @@ class DefinitionMatchGroup:
 
     def __bool__(self):
         return bool(self.matching)
+
+
+class Signature:
+    """A signature is a list that repersents the signature of a sentence.
+
+    It is 'immutable' in that set operations are made inconvenent. And some
+    simple type checks are performed. Other than that it is a convence
+    wrapper."""
+
+    def __init__(self, init):
+        self._tokens = list(init)
+        for token in self._tokens:
+            if not isinstance(token, (Token, SubSentence)):
+                raise TypeError('Invalid Signature value')
+
+    def __len__(self):
+        return len(self._tokens)
+
+    def __iter__(self):
+        return iter(self._tokens)
+
+    def __getitem__(self, index):
+        return self._tokens[index]
+
+    #
+    def conflicts(self, other):
+        for i in range(min(len(self._tokens), len(other._tokens))):
+            if self._tokens[i] == other._tokens[i]:
+                continue
+            if ((self._tokens[i] == sub_expression and
+                 other._tokens[i] == sub_signature) or
+                (self._tokens[i] == sub_signature and
+                 other._tokens[i] == sub_expression)):
+                return True
+            return False
+        else:
+            return len(self._tokens) == len(other._tokens)

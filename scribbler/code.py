@@ -9,6 +9,7 @@ Anyways, I think that these should be enough, until we start adding
 immutablity. (Scratch that, does not allow for parameters.)"""
 
 
+# With duck typing I don't think I actually need this.
 class Expression:
 
     def evaluate(self):
@@ -27,9 +28,10 @@ class FunctionEx(Expression):
         self.core = core
         self.arg_exs = arg_exs
 
-    def evaluate(self):
-    """Evaluate the function."""
-    return self.core(arg.evaluate() for arg in self.arg_exs)
+    def evaluate(self, scope):
+        """Evaluate the function."""
+        return self.core(arg.evaluate(scope) for arg in self.arg_exs)
+
 
 class ValueEx(Expression):
 
@@ -37,6 +39,17 @@ class ValueEx(Expression):
         """Define an expression that returns a given value."""
         self.value = value
 
-    def evaluate(self):
-    """Get the stored value."""
-    return self.value
+    def evaluate(self, scope):
+        """Get the stored value."""
+        return self.value
+
+
+class ParameterEx(Expression):
+
+    def __init__(self, param_number):
+        """Define an expression that returns the value of a parameter."""
+        self.param_number = param_number
+
+    def evaluate(self, scope):
+        """Get the value of the parameter for this call."""
+        return scope._some_param_lookup_(self.param_number)
