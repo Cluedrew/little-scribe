@@ -24,6 +24,12 @@ I am also hoping to add the ability for a period to end multiple sentences,
 as the chains of dots look messy. This will not work in all cases but it
 helps in some cases.
 
+### Values
+Raw values are Sentences by themselves. Currently the only supported type
+of values are integers.
+
+`15`
+
 ### Built-Ins
 There are no built-ins yet (running a program has no effect) but here is
 the first one I am aiming for:

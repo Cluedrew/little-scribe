@@ -204,16 +204,47 @@ class Signature:
     def __getitem__(self, index):
         return self._tokens[index]
 
-    #
     def conflicts(self, other):
+        """Check to see if Signatures conflict.
+
+        Conflicting Signatures are not allowed to be defined in the same
+        scope."""
         for i in range(min(len(self._tokens), len(other._tokens))):
-            if self._tokens[i] == other._tokens[i]:
+            if (isinstance(self._tokens[i], Token) and
+                    isinstance(other._tokens[i], Token) and
+                    self._tokens[i] == other._tokens[i]):
                 continue
-            if ((self._tokens[i] == sub_expression and
-                 other._tokens[i] == sub_signature) or
-                (self._tokens[i] == sub_signature and
-                 other._tokens[i] == sub_expression)):
+            if (isinstance(self._tokens[i], SubSentence) and
+                    isinstance(other._tokens[i], SubSentence) and
+                    self._tokens[i] is not other._tokens[i]):
                 return True
             return False
         else:
             return len(self._tokens) == len(other._tokens)
+
+    def matches(self, sentence):
+        """Check to see if the signature matches a list of tokens.
+
+        A list (repersenting a Sentence) matches if all the words match,
+        subsentences are in the same places."""
+        self_len = len(self._tokens)
+        sent_len = len(sentence)
+        if not (self_len == sent_len or (self_len == sent_len - 1 and
+                                         isinstance(sentence[-1], Token) and
+                                         sentence[-1].kind == 'period')):
+            return False
+        for (my_token, other_token) in zip(self._tokens, sentence):
+            pass
+            # Check for equality.
+
+
+# Idea: Why not take advantage of Multiple inheratance?
+class SignatureElement:
+    """A simple interface for elements that can be used inside a signature.
+
+    Implementing classes must define equality."""
+
+    def sig_match(self, other):
+        if not isinstance(other, SignatureElement):
+            raise TypeError()
+        return (type(self) == type(other) and self == other)

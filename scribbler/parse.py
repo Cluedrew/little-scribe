@@ -134,6 +134,8 @@ class Parser:
                     return Sentence(children)
                 else:
                     raise ParseError('Sentence not matched.')
+            elif token.kind == 'number':
+                children.append(Sentence[token])
             else:
                 raise ValueError('Unknown Token.kind: {}'.format(token.kind))
 
@@ -155,5 +157,7 @@ class Parser:
             elif token.kind == 'period':
                 children.append(token)
                 return Sentence(children)
+            elif token.kind == 'number':
+                children.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token.kind: {}'.format(token.kind))

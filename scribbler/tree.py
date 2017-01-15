@@ -80,15 +80,8 @@ class Token(ParseTreeNode):
     def __repr__(self):
         return 'Token({!r}, {!r})'.format(self.kind, self.text)
 
-    # Short cuts for making tokens.
-    @staticmethod
-    def new_period():
-        return Token('period', '.')
 
-    @staticmethod
-    def new_first(text):
-        return Token('first-word', text)
-
-    @staticmethod
-    def new_word(text):
-        return Token('word', text)
+#class Period(Token):
+#class FirstWord(Token):
+#class Word(Token):
+#class Number(Token):
