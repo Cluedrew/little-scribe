@@ -182,6 +182,8 @@ class DefinitionMatchGroup:
         return bool(self.matching)
 
 
+# Can I make this hashable? If I can make SignatureElement hashable,
+# then I should be able to store the signature elements in a tuple.
 class Signature:
     """A signature is a list that repersents the signature of a sentence.
 
@@ -239,6 +241,8 @@ class Signature:
 
 
 # Idea: Why not take advantage of Multiple inheratance?
+# Token (or the tokens that can appear in a signature) and SubSentence can
+# inherit from a common base.
 class SignatureElement:
     """A simple interface for elements that can be used inside a signature.
 
@@ -246,5 +250,29 @@ class SignatureElement:
 
     def sig_match(self, other):
         if not isinstance(other, SignatureElement):
-            raise TypeError()
+            raise TypeError('sig_match: other not a SignatureElement')
         return (type(self) == type(other) and self == other)
+
+    DIFF_MATCH = 'match'
+    DIFF_UNIQUE = 'unique'
+    DIFF_CONFLICT = 'conflict'
+
+    def diff(self, other):
+        """Compare two signature elements. And get their level of difference.
+
+        Difference has three levels:
+          * DIFF_MATCH: Equal, there is no difference between the two.
+          * DIFF_UNIQUE: There is a difference between the two that can be
+            seen while parsing.
+          * DIFF_CONFLICT: There is a difference between the two that cannot
+            be seen while parsing.
+        (I could turn this into a five state order comparison... Useful?)"""
+        if not isinstance(other, SignatureElement):
+            raise TypeError('diff: other is not a SignatureElement')
+        # This is dependant on the rules of matching, still not worked out.
+        if isinstance(self, Token) and isinstance(other, Token):
+            return DIFF_MATCH if self == other else DIFF_UNIQUE
+        if (isinstance(self, SignatureElement) and
+                isinstance(other, SignatureElement)):
+            return DIFF_MATCH if self == other else DIFF_CONFLICT
+        return DIFF_UNIQUE

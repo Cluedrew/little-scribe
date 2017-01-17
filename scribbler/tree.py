@@ -81,7 +81,12 @@ class Token(ParseTreeNode):
         return 'Token({!r}, {!r})'.format(self.kind, self.text)
 
 
-#class Period(Token):
-#class FirstWord(Token):
-#class Word(Token):
-#class Number(Token):
+# Maybe something like this? Do I keep kind?
+class PeriodToken(Token):
+
+    def __init__(self, text='.'):
+        super(PeriodToken, self).__init__('period', '.')
+
+#class FirstToken(Token):
+#class WordToken(Token):
+#class NumberToken(Token):
