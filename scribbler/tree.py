@@ -81,11 +81,19 @@ class Token(ParseTreeNode):
         return 'Token({!r}, {!r})'.format(self.kind, self.text)
 
 
-# Maybe something like this? Do I keep kind?
+# Maybe something like this:
 class PeriodToken(Token):
 
+    regex = re.compile('\.')
+
+    # This would be on Token:
+    @classmethod
+    def regex_match(cls, text):
+        """Check to see if this text matches the class's regex."""
+        return cls.regex.fullmatch(text)
+
     def __init__(self, text='.'):
-        super(PeriodToken, self).__init__('period', '.')
+        super(PeriodToken, self).__init__(text)
 
 #class FirstToken(Token):
 #class WordToken(Token):

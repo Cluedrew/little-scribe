@@ -182,6 +182,41 @@ class DefinitionMatchGroup:
         return bool(self.matching)
 
 
+class SignatureElement:
+    """An interface for elements that can be used inside a signature.
+
+    Implementing classes must define equality.
+    All classes that repersent a piece of text should also be children of
+    Token, while no classes that repersent a subsentence should."""
+
+    def sig_match(self, other):
+        if not isinstance(other, SignatureElement):
+            raise TypeError('sig_match: other not a SignatureElement')
+        return (type(self) == type(other) and self == other)
+
+    DIFF_MATCH = 'match'
+    DIFF_UNIQUE = 'unique'
+    DIFF_CONFLICT = 'conflict'
+
+    def diff(self, other):
+        """Compare two signature elements. And get their level of difference.
+
+        Difference has three levels:
+          * DIFF_MATCH: Equal, there is no difference between the two.
+          * DIFF_UNIQUE: There is a difference between the two that can be
+            seen while parsing.
+          * DIFF_CONFLICT: There is a difference between the two that cannot
+            be seen while parsing."""
+        if not isinstance(other, SignatureElement):
+            raise TypeError('diff: other is not a SignatureElement')
+        # This is dependant on the rules of matching, still not worked out.
+        if isinstance(self, Token) and isinstance(other, Token):
+            return self.DIFF_MATCH if self == other else self.DIFF_UNIQUE
+        if isinstance(self, Token) or isinstance(other, Token):
+            return self.DIFF_MATCH if self == other else self.DIFF_CONFLICT
+        return self.DIFF_UNIQUE
+
+
 # Can I make this hashable? If I can make SignatureElement hashable,
 # then I should be able to store the signature elements in a tuple.
 class Signature:
@@ -224,55 +259,27 @@ class Signature:
         else:
             return len(self._tokens) == len(other._tokens)
 
-    def matches(self, sentence):
-        """Check to see if the signature matches a list of tokens.
-
-        A list (repersenting a Sentence) matches if all the words match,
-        subsentences are in the same places."""
-        self_len = len(self._tokens)
-        sent_len = len(sentence)
-        if not (self_len == sent_len or (self_len == sent_len - 1 and
-                                         isinstance(sentence[-1], Token) and
-                                         sentence[-1].kind == 'period')):
-            return False
-        for (my_token, other_token) in zip(self._tokens, sentence):
-            pass
-            # Check for equality.
-
-
-# Idea: Why not take advantage of Multiple inheratance?
-# Token (or the tokens that can appear in a signature) and SubSentence can
-# inherit from a common base.
-class SignatureElement:
-    """A simple interface for elements that can be used inside a signature.
-
-    Implementing classes must define equality."""
-
-    def sig_match(self, other):
-        if not isinstance(other, SignatureElement):
-            raise TypeError('sig_match: other not a SignatureElement')
-        return (type(self) == type(other) and self == other)
-
-    DIFF_MATCH = 'match'
-    DIFF_UNIQUE = 'unique'
-    DIFF_CONFLICT = 'conflict'
+    DIFF_MATCH = SignatureElement.DIFF_MATCH
+    DIFF_UNIQUE = SignatureElement.DIFF_UNIQUE
+    DIFF_CONFLICT = SignatureElement.DIFF_CONFLICT
 
     def diff(self, other):
-        """Compare two signature elements. And get their level of difference.
+        """Get the level of difference between two signatures."""
+        if not isinstance(other, Signature):
+            raise TypeError('diff: other is not a Signature')
+        for (self_element, other_element) in zip(self._tokens, other._tokens):
+            result = self_element.diff(other_element)
+            if self.DIFF_MATCH != result:
+                return result
+        else:
+            return (self.DIFF_MATCH if len(self._tokens) == len(other._tokens)
+                    else self.DIFF_UNIQUE)
 
-        Difference has three levels:
-          * DIFF_MATCH: Equal, there is no difference between the two.
-          * DIFF_UNIQUE: There is a difference between the two that can be
-            seen while parsing.
-          * DIFF_CONFLICT: There is a difference between the two that cannot
-            be seen while parsing.
-        (I could turn this into a five state order comparison... Useful?)"""
-        if not isinstance(other, SignatureElement):
-            raise TypeError('diff: other is not a SignatureElement')
-        # This is dependant on the rules of matching, still not worked out.
-        if isinstance(self, Token) and isinstance(other, Token):
-            return DIFF_MATCH if self == other else DIFF_UNIQUE
-        if (isinstance(self, SignatureElement) and
-                isinstance(other, SignatureElement)):
-            return DIFF_MATCH if self == other else DIFF_CONFLICT
-        return DIFF_UNIQUE
+    def is_match(self, other):
+        return self.DIFF_MATCH == self.diff(other)
+
+    def is_unique(self, other):
+        return self.DIFF_UNIQUE == self.diff(other)
+
+    def is_conflict(self, other):
+        return self.DIFF_CONFLICT == self.diff(other)

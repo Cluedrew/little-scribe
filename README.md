@@ -6,7 +6,7 @@ that language. This is kind of a joke.
 
 I am going through with the joke as a learning exersise.
 
-### Language Definition
+## Language Definition ##
 The language definition is quite simple at this stage. It is functional and
 dynamically typed.
 
@@ -36,7 +36,9 @@ the first one I am aiming for:
 
 `Define Function signature. to be Function definition. .`
 
-### Scribbler
+It covers a lot of the features needed in the language.
+
+## Scribbler ##
 This is my compiler for Little Scribe. It is implemented in Python because it
 is fast to write, widely used language that I know and that shares some
 characteristics of Little Scribe.

@@ -26,6 +26,9 @@ token_regexes = {
     'number': NUMBER_EXP,
     }
 
+# A set of Token child types.
+token_types = {WordToken, FirstToken, PeriodToken, NumberToken}
+
 
 def make_token(source_string):
     """Pull off the first token in the source string.
