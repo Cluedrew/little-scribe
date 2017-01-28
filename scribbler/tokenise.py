@@ -9,7 +9,85 @@ import re
 import string
 
 
-from tree import Token
+from tree import ParseTreeNode
+from signature import SignatureElement
+
+
+class Token(ParseTreeNode, SignatureElement):
+    """Repersents a 'word' of the language.
+
+    Tokens are leaf nodes in the parse tree."""
+
+    def __init__(self, text):
+        if not self.regex_match(text):
+            raise ValueError('Text does not match regex in Token.')
+        self.text = text
+
+    def write(self, to=sys.stdout, prefix=''):
+        print(prefix, self.text, file=to)
+
+    @classmethod
+    def regex_match(cls, text):
+        """Check to see if this text matches the class's regex."""
+        return cls.regex.fullmatch(text)
+
+    def __eq__(self, other):
+        if not isinstance(other, Token):
+            raise TypeError('Tokens can only be equal to other Tokens.')
+        return (self.kind == other.kind) and (self.text == other.text)
+
+    def __str__(self):
+        return self.text
+
+    def __repr__(self):
+        raise NotImplementedError()
+
+
+class PeriodToken(Token):
+    """The Token that appears at the end of a Sentence."""
+
+    regex = re.compile('\.')
+
+    def __init__(self, text='.'):
+        super(PeriodToken, self).__init__(text)
+
+    def __repr__(self):
+        return 'PeriodToken()'
+
+
+class FirstToken(Token):
+    """A Token that appears at the begining of a Sentence."""
+
+    regex = re.compile(
+        '[{0.ascii_uppercase}][{0.ascii_lowercase}]*'.format(string))
+
+    def __init__(self, text):
+        super(FirstToken, self).__init__(text)
+
+    def __repr__(self):
+        return 'FirstToken({!r})'.format(self.text)
+
+
+class WordToken(Token):
+    """A Token that makes up the middle of a Sentence."""
+
+    regex = re.compile('[{0.ascii_lowercase}]+'.format(string))
+
+    def __init__(self, text):
+        super(WordToken, self).__init__(text)
+
+    def __repr__(self):
+        return 'WordToken({!r})'.format(self.text)
+
+
+class NumberToken(Token):
+    """A value Token repersenting an Integer value."""
+
+    def __init__(self, text):
+        super(NumberToken, self).__init__(text)
+
+    def __repr__(self):
+        return 'NumberToken({!r})'.format(self.text)
 
 
 WHITESPACE_EXP = re.compile('[{0.whitespace}]+'.format(string))

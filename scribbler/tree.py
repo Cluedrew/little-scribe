@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """The various types that repersent nodes in the parse tree."""
 
-# I think I shouldn't put so much logic here. It just doesn't seem to fit.
-# But where should it go?
 
 import sys
 
@@ -58,43 +56,3 @@ class Paragraph(Sentence):
         if '' != prefix:
             raise ValueError('Paragraph not at top level.')
         super().write(to, prefix)
-
-
-class Token(ParseTreeNode):
-    """Repersents a 'word' of the language.
-
-    Tokens are leaf nodes in the parse tree."""
-
-    def __init__(self, kind, text):
-        self.kind = kind
-        self.text = text
-
-    def write(self, to=sys.stdout, prefix=''):
-        print(prefix, self.text, file=to)
-
-    def __eq__(self, other):
-        if not isinstance(other, Token):
-            raise TypeError('Tokens can only be equal to other Tokens.')
-        return (self.kind == other.kind) and (self.text == other.text)
-
-    def __repr__(self):
-        return 'Token({!r}, {!r})'.format(self.kind, self.text)
-
-
-# Maybe something like this:
-class PeriodToken(Token):
-
-    regex = re.compile('\.')
-
-    # This would be on Token:
-    @classmethod
-    def regex_match(cls, text):
-        """Check to see if this text matches the class's regex."""
-        return cls.regex.fullmatch(text)
-
-    def __init__(self, text='.'):
-        super(PeriodToken, self).__init__(text)
-
-#class FirstToken(Token):
-#class WordToken(Token):
-#class NumberToken(Token):
