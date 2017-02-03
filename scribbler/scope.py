@@ -13,7 +13,7 @@ class Scope:
         if parent is not None and not isinstance(parent, Scope):
             raise TypeError("Scope's parent must be None or another Scope.")
         self._parent = parent
-        # Currently this list is unsorted, maybe sorting to drop some
+        # Currently this list is unsorted, maybe sorting would drop some
         # O(n) operations down to O(logn).
         self._definitions = []
 

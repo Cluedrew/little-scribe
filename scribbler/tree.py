@@ -21,6 +21,10 @@ class Sentence(ParseTreeNode):
     """A branch in the tree node."""
 
     def __init__(self, children):
+        """Create a new Sentence structure.
+
+        :param children: A list of children to this node. All should be
+            some time of ParseTreeNode."""
         self.children = children
 
     def write(self, to=sys.stdout, prefix=''):
@@ -55,4 +59,15 @@ class Paragraph(Sentence):
     def write(self, to=sys.stdout, prefix=''):
         if '' != prefix:
             raise ValueError('Paragraph not at top level.')
-        super().write(to, prefix)
+        super(Paragraph, self).write(to, prefix)
+
+
+class Pattern(ParseTreeNode):
+    """A Pattern that other sentences can match against."""
+
+    def __init__(self, children):
+        self.children = children
+
+    def get_signature(self):
+        """Create the signature that this Pattern defines."""
+        # Circular dependancy.
