@@ -148,6 +148,13 @@ class DefinitionMatchGroup:
                 new_matching.append(self.matching[index])
         return DefinitionMatchGroup(new_matching, self.prefix + [word])
 
+    def sub_sentence_mode(self):
+        """Get the parse mode that should be used for the subsentence here.
+
+        :return: None if no subsentence can occur here, otherwise it will be
+            one of 'normal' or 'signature'."""
+        pass
+
     def cur_sub_sentence_type(self):
         """Get the type of sub-sentence to be parsed after matching prefix."""
         sentence_type = None

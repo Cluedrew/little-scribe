@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """The various types that repersent nodes in the parse tree."""
 
+# Clear it out. We only need Sentence and the already exported Token.
+
 
 import sys
 

@@ -20,7 +20,7 @@ SIG_DIFF_CONFLICT = 'conflict'
 # OK, another issue, this signature for matching is actually different
 # from the Signature we read in while parsing.
 class Signature:
-    """A signature is a list that repersents the signature of a sentence.
+    """A signature is a list that repersents the signature of a function.
 
     It is 'immutable' in that set operations are made inconvenent. And some
     simple type checks are performed. Other than that it is a convence
