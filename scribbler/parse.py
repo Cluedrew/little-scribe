@@ -7,11 +7,48 @@ import sys
 from scope import (
     Scope,
     )
-from tree import (
-    Paragraph,
-    Sentence,
+from tokenize import (
     Token,
     )
+
+class Sentence:
+    """A Sentence is a Little Scribe expression.
+
+    They are lists of Tokens and Sentences, the children of the node."""
+
+    ChildTypes = (Sentence, Token)
+
+    def __init__(self, iter=None):
+        """Create a new Sentence structure.
+
+        :param children: A list of children to this node. All should be
+            some time of ParseTreeNode."""
+        self._children = []
+        for child in iter:
+            if isinstance(child, Sentence.ChildTypes):
+                self._children.append(child)
+            else:
+                raise TypeError('Sentence provided with non-child type')
+
+    def __getitem__(self, index):
+        return self._children[index]
+
+    def __len__(self):
+        return len(self._children)
+
+    def append(self, child)
+        """Add a new Token to the end of the Sentence."""
+        if isinstance(child, Sentence.ChildTypes):
+            self._children.append(child)
+        else:
+            raise TypeError('Sentence provided with non-child type')
+
+    def write(self, to=sys.stdout, prefix=''):
+        for child in self.children:
+            if isinstance(child, Token):
+                child.write(to, prefix)
+            else:
+                child.write(to, prefix + '  ')
 
 
 class UnfinishedSentencesError(Exception):
@@ -100,9 +137,16 @@ class Parser:
         return Paragraph(self.parse_signature().children)
 
     def parse_sentence(self, scope):
-        pass
+        # Try: do the split expression/signature here, and also handle the
+        # start of the sentence.
+        start = self._next_token()
+        # Check Start
+        node = Sentence([start])
+        if some_condition:
+            return self.parse_expression(scope, node)
+        else:
+            return self.parse_signature(scope, node)
 
-    # WIP: Useful feature but not needed to get it working.
     def parse_expression(self, scope):
         """Parse an expression.
 
@@ -112,32 +156,37 @@ class Parser:
 
         :param scope: The scope the expression is being parsed within.
         :return: A Sentence."""
-        children = []
+        node = Sentence()
+        # Some sort of tracker for the definitions we are matching.
+        part_match = scope.new_definition()
         for token in self._token_iterator:
-            if token.kind == 'first-word':
+            if isinstance(token, FirstToken):
                 self._push_back(token)
-                # I need a way to check if it should be a expression or a
-                # signature. Is it part of the definition?
-                children.append(self.parse_expression(scope))
-                if not scope.match_prefix(children):
-                    raise ParseError('Sentence not matched.')
-            elif token.kind == 'word':
-                children.append(token)
-                if not scope.match_prefix(children):
-                    if (children[-1].ends_with_dot() and
-                            scope.match_to_end(children)):
-                        return Sentence(children)
-                    raise ParseError('Sentence not matched.')
-            elif token.kind == 'period':
-                children.append(token)
-                if scope.match_exact(children):
-                    return Sentence(children)
+                # Split must happen here, expression or signature?
+                # Something like:
+                sub = part_match.subsentence_type()
+                if sub = SubExpression:
+                    node.append(self.parse_expression(scope))
+                elif sub = SubSignature:
+                    node.append(self.parse_signature(scope))
                 else:
                     raise ParseError('Sentence not matched.')
-            elif token.kind == 'number':
-                children.append(Sentence[token])
+            elif isinstance(token, WordToken):
+                if part_match.continues_on(token):
+                    node.append(token)
+                elif node.last().ends_with_dot() and part_match.complete():
+                    return node
+                else:
+                    raise ParseError('Sentence not matched.')
+            elif isinstance(token, PeriodToken):
+                if part_match.complete():
+                    return node
+                else:
+                    raise ParseError('Sentence not matched.')
+            elif isinstance(token, NumberToken):
+                node.append(Sentence([token])
             else:
-                raise ValueError('Unknown Token.kind: {}'.format(token.kind))
+                raise ValueError('Unknown Token Kind: {}'.format(type(token)))
 
     def parse_signature(self):
         """Take a stream of tokens and create a Signature.
@@ -147,17 +196,17 @@ class Parser:
         This will use tokens from the stream, but may not empty the stream.
 
         :return: A Sentence reperesenting the sentence."""
-        children = []
+        node = Sentence()
         for token in self._token_iterator:
-            if token.kind == 'first-word' and children:
+            if isinstance(token, FirstToken) and node:
                 self._push_back(token)
-                children.append(self.parse_signature())
-            elif token.kind in ('first-word', 'word'):
-                children.append(token)
-            elif token.kind == 'period':
-                children.append(token)
+                node.append(self.parse_signature())
+            elif isinstance(token, (FirstToken, WordToken)):
+                node.append(token)
+            elif isinstance(token, PeriodToken):
+                node.append(token)
                 return Sentence(children)
-            elif token.kind == 'number':
-                children.append(Sentence([token]))
+            elif isinstance(token, NumberToken):
+                node.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token.kind: {}'.format(token.kind))

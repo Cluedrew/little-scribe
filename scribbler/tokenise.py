@@ -9,11 +9,7 @@ import re
 import string
 
 
-from tree import ParseTreeNode
-from signature import SignatureElement
-
-
-class Token(ParseTreeNode, SignatureElement):
+class Token:
     """Repersents a 'word' of the language.
 
     Tokens are leaf nodes in the parse tree."""
@@ -83,6 +79,8 @@ class WordToken(Token):
 class NumberToken(Token):
     """A value Token repersenting an Integer value."""
 
+    regex = re.compile('[{0.digits}]+'.format(string))
+
     def __init__(self, text):
         super(NumberToken, self).__init__(text)
 
@@ -91,18 +89,6 @@ class NumberToken(Token):
 
 
 WHITESPACE_EXP = re.compile('[{0.whitespace}]+'.format(string))
-WORD_EXP = re.compile('[{0.ascii_lowercase}]+'.format(string))
-FIRST_WORD_EXP = re.compile(
-    '[{0.ascii_uppercase}][{0.ascii_lowercase}]*'.format(string))
-PERIOD_EXP = re.compile('\.')
-NUMBER_EXP = re.compile('[{0.digits}]+'.format(string))
-
-token_regexes = {
-    'first-word': FIRST_WORD_EXP,
-    'word': WORD_EXP,
-    'period': PERIOD_EXP,
-    'number': NUMBER_EXP,
-    }
 
 # A set of Token child types.
 token_types = {WordToken, FirstToken, PeriodToken, NumberToken}
@@ -118,8 +104,8 @@ def make_token(source_string):
     whitespace_match = WHITESPACE_EXP.match(source_string)
     if whitespace_match:
         source_string = source_string[whitespace_match.end():]
-    for token_kind, token_exp in token_regexes.items():
-        token_match = token_exp.match(source_string)
+    for token_kind in token_types:
+        token_match = token_kind.regex.match(source_string)
         if token_match:
             return (Token(token_kind, token_match.group()),
                     source_string[token_match.end():])

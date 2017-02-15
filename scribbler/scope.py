@@ -90,89 +90,77 @@ class Scope:
         else:
             return DefinitionMatchGroup(sentence)
 
+    class _Node:
+        """Internal class used in constructing a tri, to store definions."""
+
+        def __init__(self)
+            self.subsentence = None
+            self.tokens = []
+
+
+DEF_DIFF_MATCH = 'match'
+DEF_DIFF_CONFLICT = 'conflict'
+DEF_DIFF_UNIQUE = 'unique'
 
 class Definition:
-    """Repersents a function definition in Little Scribe.
+    """A Definition in Little Scribe. Currently only function definitions."""
 
-    A function definition consists of the pattern being defined (the
-    Signature) and what it is being defined to (the body)."""
+    @staticmethod
+    def from_define(head, body):
+        """Create a new function Definition from the Define.
 
-    def __init__(self, signature, body):
-        """Create the definition from its signature and the code body.
-
-        :param signature: A list that repersents the signature.
-        :param body: A callable that repersents the operation the definition
-            preforms on its parameters."""
-        self.sig = signature
-        self.body = body
-
-    def __call__(self, args):
-        """Evaluate the function for a given set of arguments."""
-        return self.body(args)
-
-    def __getitem__(self, index):
-        if isinstance(index, int):
-            return self.sig[index]
-        else:
-            raise TypeError()
-
-    def has_conflict(self, other):
-        for i in range(min(len(self.sig), len(other.sig))):
-            if self.sig[i] == other.sig[i]:
-                continue
-            if ((self.sig[i] == sub_expression and
-                 other.sig[i] == sub_signature) or
-                (self.sig[i] == sub_signature and
-                 other.sig[i] == sub_expression)):
-                return True
-            return False
-        else:
-            return len(self.sig) == len(other.sig)
-
-
-class DefinitionMatchGroup:
-    """A group of definitions that match a given prefix."""
-
-    def __init__(self, prefix, matching=None):
-        self.prefix = prefix
-        self.matching = matching if matching is not None else []
-
-    def next_match(self, word):
-        """Create a new group that matches a subset of this group.
-
-        The Definitions that match prefix + [word] are matched."""
-        at = len(self.prefix)
-        new_matching = []
-        for index, match in self.matching:
-            if match[at] == word:
-                new_matching.append(self.matching[index])
-        return DefinitionMatchGroup(new_matching, self.prefix + [word])
-
-    def sub_sentence_mode(self):
-        """Get the parse mode that should be used for the subsentence here.
-
-        :return: None if no subsentence can occur here, otherwise it will be
-            one of 'normal' or 'signature'."""
+        :param head: The Sentence that defines the function signature.
+        :param body: The Sentence that defines the function body."""
         pass
 
-    def cur_sub_sentence_type(self):
-        """Get the type of sub-sentence to be parsed after matching prefix."""
-        sentence_type = None
-        place = len(self.prefix)
-        for definition in self.matching:
-            if isinstance(definition[at], SubSentence):
-                if sentence_type is None:
-                    sentence_type = definition[at]
-                elif sentence_type != definition[at]:
-                    raise Exception('Conficting SubSentence type: '
-                                    'Improper DefinitionMatchGroup')
-        return sentence_type
+    @staticmethod
+    def _diff_element(self_el, other_el):
+        """Difference level between two elements of a definition signature."""
+        are_tokens = [
+            isinstance(self_el, Token), isinstance(other_el, Token)]
+        if all(are_tokens):
+            return DEF_DIFF_MATCH if self_el == other_el else DEF_DIFF_UNIQUE
+        if any(are_tokens):
+            return DEF_DIFF_UNIQUE
+        return DEF_DIFF_MATCH if self_el == other_el else DEF_DIFF_CONFLICT
 
-    def __len__(self):
-        return len(self.matching)
+    def diff(self, other):
+        """Get the level of difference between two definitions."""
+        if not isinstance(other, Signature):
+            raise TypeError('diff: other is not a Signature')
+        for (self_element, other_element) in zip(self._tokens, other._tokens):
+            result = self._diff_element(self_element, other_element)
+            if DEF_DIFF_MATCH != result:
+                return result
+        else:
+            return (DEF_DIFF_MATCH if len(self._tokens) == len(other._tokens)
+                    else DEF_DIFF_UNIQUE)
 
-    def __iter__(self):
-        return iter(self.matching)
+    def is_match(self, other):
+        return DEF_DIFF_MATCH is self.diff(other)
 
-    def __bool__(self):
-        return bool(self.matching)
+    def is_unique(self, other):
+        return DEF_DIFF_UNIQUE is self.diff(other)
+
+    def is_conflict(self, other):
+        return DEF_DIFF_CONFLICT is self.diff(other)
+
+
+# I still need the subsentence idea for parse modes, unless I go for the
+# keyword approach...
+class SubSentence(SignatureElement):
+    """Repersents a sub-sentence in a function signature.
+
+    :ivar sub_type: The type of the sub-sentence.
+        Currently it only exists to make them unique, but we may get things
+        from the type later."""
+
+    def __init__(self, sub_type):
+        self.sub_type = sub_type
+
+    def __eq__(self, other):
+        return self.sub_type == other.sub_type
+
+
+sub_signature = SubSentence(Signature)
+sub_expression = SubSentence(Sentence)
