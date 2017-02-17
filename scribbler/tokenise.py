@@ -30,7 +30,7 @@ class Token:
     def __eq__(self, other):
         if not isinstance(other, Token):
             raise TypeError('Tokens can only be equal to other Tokens.')
-        return (self.kind == other.kind) and (self.text == other.text)
+        return (self.text == other.text) and (type(self) == type(other))
 
     def __str__(self):
         return self.text

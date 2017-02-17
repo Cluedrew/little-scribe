@@ -13,9 +13,8 @@ class Scope:
         if parent is not None and not isinstance(parent, Scope):
             raise TypeError("Scope's parent must be None or another Scope.")
         self._parent = parent
-        # Currently this list is unsorted, maybe sorting would drop some
-        # O(n) operations down to O(logn).
         self._definitions = []
+        self._root = Scope._Node()
 
     def _iter_definitions(self):
         for definition in self._definitions:
@@ -23,6 +22,30 @@ class Scope:
         if self._parent is not None:
             for definition in self._parent._iter_definitions():
                 yield definition
+
+    def _add_to_tree(self, definition):
+        node = self._root
+        for el in definition.pattern:
+            if isinstance(el, Token):
+                for t,n in node.tokens:
+                    if t == el:
+                        node = n
+                        break
+                else:
+                    # Error
+            elif el is SUBSENTENCE:
+                if node.subsentence is SUBSENTENCE:
+                    node = node.subs_node
+                else:
+                    # Error
+            elif el is SUBSIGNATURE:
+                if node.subsentence is SUBSIGNATURE:
+                    node = node.subs_node
+                else:
+                    # Error
+            else:
+                # Error
+
 
     def add_definition(self, definition):
         """Add a new definition to the scope.
@@ -34,6 +57,7 @@ class Scope:
                                  'definition in scope.')
         else:
             self._definitions.append(definition)
+            self._add_to_tree(definition)
 
     def merge(self, other):
         """Merge another Scope into this one."""
@@ -95,7 +119,9 @@ class Scope:
 
         def __init__(self)
             self.subsentence = None
+            self.subs_node = None
             self.tokens = []
+            self.definition = None
 
 
 DEF_DIFF_MATCH = 'match'
@@ -164,3 +190,24 @@ class SubSentence(SignatureElement):
 
 sub_signature = SubSentence(Signature)
 sub_expression = SubSentence(Sentence)
+
+SUBSENTENCE = 'subsentence'
+SUBSIGNATURE = 'subsignature'
+
+
+class MatchPointer:
+
+    def __init__(self, scope):
+        self.cur_node = scope._root
+
+    def end(self):
+        definition = self.cur_node.defintion
+        if definition is None:
+            # What to do if there is no definition?
+        return definition
+
+    def next(self, token):
+        for (t, node) in self.cur_node.tokens:
+            if t == token:
+                self.cur_node = node
+                return

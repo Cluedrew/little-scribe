@@ -103,4 +103,3 @@ context-free.) Because of the LISP problem, where functions will end with
 blocks like `)))]))]))` because the deep nesting suddenly ends. With this
 rule `.........` becomes `.`. Also I have found it to actually be pretty
 intuitive in my test writes.
-
