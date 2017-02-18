@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+"""This modual defines Scopes and related classes.
+
+This includes the actual Definitions and tools for creating and manuplating
+both classes."""
+
+
+class NoDefinitionError(Exception):
+    """No definition where a definition (or a group) was expected."""
+
+class ScopeFault(Exception):
+    """Internal Error: Scope is behaving inconsistantly."""
 
 
 class Scope:
@@ -16,6 +27,10 @@ class Scope:
         self._definitions = []
         self._root = Scope._Node()
 
+    def new_matcher(self):
+        """Return an object that can be used to match definitions."""
+        return MatchPointer(self)
+
     def _iter_definitions(self):
         for definition in self._definitions:
             yield definition
@@ -32,19 +47,20 @@ class Scope:
                         node = n
                         break
                 else:
-                    # Error
-            elif el is SUBSENTENCE:
-                if node.subsentence is SUBSENTENCE:
-                    node = node.subs_node
+                    new_node = Scope._Node()
+                    node.tokens.append( (el, new_node) )
+                    node = new_node
+            elif el is SUBSENTENCE or el is SUBSIGNATURE:
+                if node.sub_type is el:
+                    node = node.sub_node
+                elif node.sub_type is None:
+                    node.sub_type = el
+                    node.sub_node = Scope._Node()
+                    node = node.sub_node
                 else:
-                    # Error
-            elif el is SUBSIGNATURE:
-                if node.subsentence is SUBSIGNATURE:
-                    node = node.subs_node
-                else:
-                    # Error
+                    raise ScopeFault('New definition would conflict.')
             else:
-                # Error
+                raise ScopeFault('Bad element in new definition.')
 
 
     def add_definition(self, definition):
@@ -61,6 +77,7 @@ class Scope:
 
     def merge(self, other):
         """Merge another Scope into this one."""
+        # I don't think I want to handle merging this way.
         # Weak exception garenty.
         for definition in other._iter_definitions():
             for existing in self._iter_definitions():
@@ -73,53 +90,12 @@ class Scope:
                 # This is adding to the same list its reading from.
                 self._definitions.append(definition)
 
-    def match_first(self, first_word):
-        """Match definitions that start with first_word."""
-        group = DefinitionMatchGroup([first_word])
-        for definition in self._definitions:
-            if first_word == definition[0]:
-                group.matching.append(definition)
-        return group
-
-    def match_prefix(self, prefix):
-        """Match definitions that start with prefix."""
-        group = DefinitionMatchGroup(prefix)
-        for definition in self._definitions:
-            for i in range(len(prefix)):
-                if prefix[i] != definition[i]:
-                    break
-            else:
-                group.matching.append(definition)
-        return group
-
-    def match_to_end(self, sentence):
-        """Match definitions that start with prefix up to the period.
-
-        [The period might become optional at some point.]"""
-        has_period = (isinstance(sentence[-1], Token) and
-                      sentence[-1].kind == 'period')
-        # Go through every definition.
-        for definition in self._definitions:
-            # Search for a mismatch.
-            for (i, word) in enumerate(definition):
-                if word is sub_expression:
-                    if not isinstance(sentence[i], Sentence):
-                        break
-                elif isinstance(word, Token):
-                    if (word.kind != sentence[i].kind or
-                            word.text != sentence[i].text):
-                        break
-            else:
-                return DefinitionMatchGroup(sentence, definition)
-        else:
-            return DefinitionMatchGroup(sentence)
-
     class _Node:
         """Internal class used in constructing a tri, to store definions."""
 
         def __init__(self)
-            self.subsentence = None
-            self.subs_node = None
+            self.sub_type = None
+            self.sub_node = None
             self.tokens = []
             self.definition = None
 
@@ -128,16 +104,45 @@ DEF_DIFF_MATCH = 'match'
 DEF_DIFF_CONFLICT = 'conflict'
 DEF_DIFF_UNIQUE = 'unique'
 
+
 class Definition:
     """A Definition in Little Scribe. Currently only function definitions."""
+
+    def __init__(self, pattern, code):
+        self.pattern = pattern
+        self.code = code
 
     @staticmethod
     def from_define(head, body):
         """Create a new function Definition from the Define.
 
+        TODO Eventually this should probably be moved to the modual where the
+        built in functions are provided, as it is just a built in, although an
+        unusual one.
+
         :param head: The Sentence that defines the function signature.
         :param body: The Sentence that defines the function body."""
-        pass
+        pattern = []
+        iterator = iter(head)
+        params = []
+        token = next(iterator)
+        if not isinstance(token, FirstToken):
+            raise Exception('Error: head did not begin with token')
+        for token in iterator:
+            if isinstance(token, PeriodToken):
+                try:
+                    iter(iterator)
+                except StopIteration:
+                    break
+                raise Exception('Embedded Period.')
+            elif isinstance(token, WordToken):
+                pattern.append(token)
+            elif isinstance(token, Sentence):
+                pattern.append(SUBSENTENCE)
+                params.append(token)
+        # TODO
+        code = some_magic_function(params, body)
+        return Definition(pattern, code)
 
     @staticmethod
     def _diff_element(self_el, other_el):
@@ -172,25 +177,6 @@ class Definition:
         return DEF_DIFF_CONFLICT is self.diff(other)
 
 
-# I still need the subsentence idea for parse modes, unless I go for the
-# keyword approach...
-class SubSentence(SignatureElement):
-    """Repersents a sub-sentence in a function signature.
-
-    :ivar sub_type: The type of the sub-sentence.
-        Currently it only exists to make them unique, but we may get things
-        from the type later."""
-
-    def __init__(self, sub_type):
-        self.sub_type = sub_type
-
-    def __eq__(self, other):
-        return self.sub_type == other.sub_type
-
-
-sub_signature = SubSentence(Signature)
-sub_expression = SubSentence(Sentence)
-
 SUBSENTENCE = 'subsentence'
 SUBSIGNATURE = 'subsignature'
 
@@ -203,11 +189,25 @@ class MatchPointer:
     def end(self):
         definition = self.cur_node.defintion
         if definition is None:
-            # What to do if there is no definition?
+            raise NoDefinitionError('Is not a match.')
         return definition
+
+    def has_end(self):
+        return self.cur_node.definition is not None
 
     def next(self, token):
         for (t, node) in self.cur_node.tokens:
             if t == token:
                 self.cur_node = node
                 return
+        else:
+            raise NoDefinitionError('No possible matches.')
+
+    def next_sub(self):
+        if self.cur_node is not None:
+            self.cur_node = self.cur_node.sub_node
+        else:
+            raise NoDefinitionError('No possible matches.')
+
+    def sub_type(self):
+        return self.cur_node.sub_type

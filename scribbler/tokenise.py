@@ -76,7 +76,11 @@ class WordToken(Token):
         return 'WordToken({!r})'.format(self.text)
 
 
-class NumberToken(Token):
+class ValueToken(Token):
+    """A value Token is a hard coded value, is an entire sentence. """
+
+
+class NumberToken(ValueToken):
     """A value Token repersenting an Integer value."""
 
     regex = re.compile('[{0.digits}]+'.format(string))

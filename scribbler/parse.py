@@ -8,7 +8,11 @@ from scope import (
     Scope,
     )
 from tokenize import (
+    FirstToken,
+    PeriodToken,
     Token,
+    ValueToken,
+    WordToken,
     )
 
 class Sentence:
@@ -18,17 +22,20 @@ class Sentence:
 
     ChildTypes = (Sentence, Token)
 
-    def __init__(self, iter=None):
+    def __init__(self, init=None):
         """Create a new Sentence structure.
 
-        :param children: A list of children to this node. All should be
-            some time of ParseTreeNode."""
+        :param init: Either None, a Token, or an interable of ChildTypes."""
         self._children = []
-        for child in iter:
-            if isinstance(child, Sentence.ChildTypes):
+        if isinstance(init, Token):
+            self._children.append(init)
+        elif init is None:
+            pass
+        elif hasattr(init, '__iter__'):
+            for child in init:
+                if not isinstance(child, Sentence.ChildTypes):
+                    raise TypeError('Sentence provided with non-child type')
                 self._children.append(child)
-            else:
-                raise TypeError('Sentence provided with non-child type')
 
     def __getitem__(self, index):
         return self._children[index]
@@ -49,6 +56,13 @@ class Sentence:
                 child.write(to, prefix)
             else:
                 child.write(to, prefix + '  ')
+
+    def ends_with_dot(self):
+        if isinstance(self._children[-1], PeriodToken):
+            return True
+        if isinstance(self._children[-1], Sentence):
+            return self._children[-1].ends_with_dot()
+        return False
 
 
 class UnfinishedSentencesError(Exception):
@@ -75,26 +89,13 @@ class SentenceUnfinisedError(ParseError):
     """A Sentence was not finished."""
 
 
-class _ParseIter:
-    """A convenience iterator for internal use in Parser."""
-
-    def __init__(self, parser):
-        self.parser = parser
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.parser._next_token()
-
-
 class Parser:
     """This class repersents a parser."""
 
     def __init__(self, token_stream):
         self.token_stream = token_stream
         self.head = None
-        self._token_iterator = _ParseIter(self)
+        self._token_iterator = Parse._Iter(self)
 
     def _next_token(self):
         """Get the next token, either from the stream or the stored head."""
@@ -156,34 +157,42 @@ class Parser:
 
         :param scope: The scope the expression is being parsed within.
         :return: A Sentence."""
-        node = Sentence()
-        # Some sort of tracker for the definitions we are matching.
-        part_match = scope.new_definition()
+        token = self._next_token()
+        if isinstance(token, ValueToken):
+            return Sentence([token])
+        elif not isinstance(token, FirstToken):
+            raise ParseError(
+                'Cannot begin a sentence with "' + str(token) + '"')
+        node = Sentence([token])
+        part_match = scope.new_matcher()
         for token in self._token_iterator:
             if isinstance(token, FirstToken):
                 self._push_back(token)
-                # Split must happen here, expression or signature?
-                # Something like:
-                sub = part_match.subsentence_type()
-                if sub = SubExpression:
+                sub = part_match.sub_type()
+                if sub is SUBSENTENCE:
                     node.append(self.parse_expression(scope))
-                elif sub = SubSignature:
+                    part_match.next_sub()
+                elif sub is SUBSIGNATURE:
                     node.append(self.parse_signature(scope))
+                    part_match.next_sub()
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(token, WordToken):
-                if part_match.continues_on(token):
+                if part_match.next(token):
                     node.append(token)
-                elif node.last().ends_with_dot() and part_match.complete():
+                # TODO It might be simpler if we follow the iterator instead.
+                elif (isinstance(node[-1], Sentence) and
+                      node[-1].ends_with_dot() and
+                      part_match.has_end()):
                     return node
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(token, PeriodToken):
-                if part_match.complete():
+                if part_match.end():
                     return node
                 else:
                     raise ParseError('Sentence not matched.')
-            elif isinstance(token, NumberToken):
+            elif isinstance(token, ValueToken):
                 node.append(Sentence([token])
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
@@ -196,17 +205,33 @@ class Parser:
         This will use tokens from the stream, but may not empty the stream.
 
         :return: A Sentence reperesenting the sentence."""
-        node = Sentence()
+        token = self._next_token
+        if not isinstance(token, FirstToken):
+            raise ParseError('Invalid start of Signature.')
+        node = Sentence([token])
         for token in self._token_iterator:
-            if isinstance(token, FirstToken) and node:
+            if isinstance(token, FirstToken):
                 self._push_back(token)
                 node.append(self.parse_signature())
-            elif isinstance(token, (FirstToken, WordToken)):
+            elif isinstance(token, WordToken):
                 node.append(token)
             elif isinstance(token, PeriodToken):
                 node.append(token)
-                return Sentence(children)
-            elif isinstance(token, NumberToken):
+                return node
+            # TODO Should this be legal?
+            elif isinstance(token, ValueToken):
                 node.append(Sentence([token]))
             else:
-                raise ValueError('Unknown Token.kind: {}'.format(token.kind))
+                raise ValueError('Unknown Token Kind: {}'.format(type(token)))
+
+    class _Iter:
+        """A convenience iterator for internal use in Parser."""
+
+        def __init__(self, parser):
+            self.parser = parser
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return self.parser._next_token()
