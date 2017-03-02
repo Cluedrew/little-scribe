@@ -106,7 +106,18 @@ DEF_DIFF_UNIQUE = 'unique'
 
 
 class Definition:
-    """A Definition in Little Scribe. Currently only function definitions."""
+    """A Definition in Little Scribe. Currently only function definitions.
+
+    :ivar pattern: A sequence that repersents the series of tokens used when
+        parsing to match this definition.
+    :ivar code: Object used to evaluate the function from its arguments.
+
+    [? I think this would be worth it for debugging. ?]
+    :ivar name: The full name of the function. Usually the pattern with the
+        parameters given.
+    [? Currently lacking type system... some day though. ?]
+    :ivar type: The function's type, Function <Args> to <Return>.
+    """
 
     def __init__(self, pattern, code):
         self.pattern = pattern

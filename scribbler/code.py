@@ -8,6 +8,66 @@ create the nodes don't actually matter at this point. (Maybe debugging?)
 Anyways, I think that these should be enough, until we start adding
 immutablity. (Scratch that, does not allow for parameters.)"""
 
+# I am going full: "Make this up as I go" here. Hopefully I can use that to
+# create a working version and refine it later. Or at least have a base.
+
+class FunctionCode:
+    """Base class to implement the code behind a Definition."""
+
+    def __call__(self, *args):
+       raise NotImplementedError()
+
+# This will not handle
+class Parameter:
+    """A node that evaluates to a parameter of the function."""
+
+   def __init__(self, pos):
+       self.pos = pos
+
+class FunctionApplication:
+    """A function application is the parsed form of a sentence. I think."""
+
+    def __init__(self, func, *args):
+        self.func = func
+        self.args = args
+
+    def __call__(self, *params):
+        # A more universal way to handle this might be a Scope.
+        evaluated_args = [
+            arg.eval(*params) if isinstance(arg, FunctionApplication) else
+            params[arg.pos] if isinstance(arg, Parameter) else arg
+            for arg in self.args
+            ]
+        if isinstance(func, Parameter):
+            return params[arg.pos](*evaluated_args)
+        return func(*evaluated_args)
+
+
+class FunctionUserDefined:
+    """A user defined function."""
+
+    def __init__(self, application):
+        self.app = application
+
+    def __call__(self, *args):
+        self.app(*args)
+
+# Then we can just have a bunch of functions that repersent the actual
+# built in functions.
+#
+# def define_function(head, body):
+#     ...
+#
+# Definition([FirstToken('Define'), 'SIGNATURE', WordToken('to'),
+#             WordToken('be'), 'SIGNATURE'],
+#            ['Define', ['Function', 'with', ['Parameters', '.'], '.'],
+#             'to', 'be', ['Function', 'body', '.'], '.'],
+#            define_function)
+# OK, if nothing else I got to figure out what to do about the name (2nd)
+# but I think the basic pattern of binding code to names will work.
+
+
+
 
 # With duck typing I don't think I actually need this.
 class Expression:
