@@ -11,28 +11,33 @@ immutablity. (Scratch that, does not allow for parameters.)"""
 # I am going full: "Make this up as I go" here. Hopefully I can use that to
 # create a working version and refine it later. Or at least have a base.
 
+
 class FunctionCode:
     """Base class to implement the code behind a Definition."""
 
     def __call__(self, *args):
        raise NotImplementedError()
 
-# This will not handle
+
 class Parameter:
     """A node that evaluates to a parameter of the function."""
 
    def __init__(self, pos):
        self.pos = pos
 
-class FunctionApplication:
-    """A function application is the parsed form of a sentence. I think."""
 
-    def __init__(self, func, *args):
+class FunctionApplication:
+    """A function application is the parsed form of a Sentence.
+
+    This assumes that all of the Sentences have already been bound to their
+    values (or replace with a Parameter object) and does not use a Scope to
+    find their values itself."""
+
+    def __init__(self, func, args):
         self.func = func
         self.args = args
 
     def __call__(self, *params):
-        # A more universal way to handle this might be a Scope.
         evaluated_args = [
             arg.eval(*params) if isinstance(arg, FunctionApplication) else
             params[arg.pos] if isinstance(arg, Parameter) else arg
@@ -43,6 +48,18 @@ class FunctionApplication:
         return func(*evaluated_args)
 
 
+class ValueNode:
+    """A callable that returns the value of a ValueToken."""
+
+    def __init__(self, token):
+    if not isinstance(token, ValueToken):
+        raise TypeError('ValueNode not given value token.')
+    self.val = token.get_value()
+
+    def __call__(self, *params):
+        return self.val
+
+
 class FunctionUserDefined:
     """A user defined function."""
 
@@ -50,66 +67,60 @@ class FunctionUserDefined:
         self.app = application
 
     def __call__(self, *args):
-        self.app(*args)
-
-# Then we can just have a bunch of functions that repersent the actual
-# built in functions.
-#
-# def define_function(head, body):
-#     ...
-#
-# Definition([FirstToken('Define'), 'SIGNATURE', WordToken('to'),
-#             WordToken('be'), 'SIGNATURE'],
-#            ['Define', ['Function', 'with', ['Parameters', '.'], '.'],
-#             'to', 'be', ['Function', 'body', '.'], '.'],
-#            define_function)
-# OK, if nothing else I got to figure out what to do about the name (2nd)
-# but I think the basic pattern of binding code to names will work.
+        if isinstance(self.app, FunctionApplication):
+            return self.app(*args)
+        return self.app
 
 
+# Built in functions:
 
 
-# With duck typing I don't think I actually need this.
-class Expression:
+def define_function(scope, head, body):
+    """Create a new function Definition. Define Head. to be Body. .
 
-    def evaluate(self):
-        raise NotImplementedError()
+    :param head: The Sentence that defines the function signature.
+    :param body: The Sentence that defines the function body."""
+    # Creating the pattern that defines the function signature.
+    pattern = []
+    iterator = iter(head)
+    params = []
+    token = next(iterator)
+    if not isinstance(token, FirstToken):
+        raise Exception('Error: head did not begin with token')
+    for token in iterator:
+        if isinstance(token, PeriodToken):
+            try:
+                iter(iterator)
+            except StopIteration:
+                break
+            raise Exception('Embedded Period.')
+        elif isinstance(token, WordToken):
+            pattern.append(token)
+        elif isinstance(token, Sentence):
+            pattern.append(SUBSENTENCE)
+            params.append(token)
+    # Create a subscope of scope with the parameter's defined.
+    local_scope = Scope(scope)
+    # ...
+    # Creating the code for a user defined function.
+    code = sentence_to_function_application(local_scope)
+    # ? code = FunctionApplication.from_sentence(scope, sentence)
+    return Definition(pattern, code)
 
+def sentence_to_function_application(scope, sentence):
+    """Convert a Sentence to a FunctionApplication with the scope."""
+    if 1 == len(sentence) and isinstance(sentence[0], ValueToken):
+        return ValueNode(sentence[0])
+    args = []
+    # Note, this has already been matched so it should always match.
+    match = scope.new_matcher()
+    for el in sentence:
+        if isinstance(el, sentence):
+            args.append(sentence_to_function_application(scope, el))
+            match.next_sub()
+        else:
+            match.next(el)
+    return FunctionApplication(match.end(), args)
 
-class FunctionEx(Expression):
-
-    def __init__(self, core, arg_exs):
-    """Create a new expression from a function.
-
-    :param core: A callable that combines the results of the arguments.
-    :param arg_exs: List of argument expressions, that are evaluated to
-        produce the inputs to core.
-    """
-        self.core = core
-        self.arg_exs = arg_exs
-
-    def evaluate(self, scope):
-        """Evaluate the function."""
-        return self.core(arg.evaluate(scope) for arg in self.arg_exs)
-
-
-class ValueEx(Expression):
-
-    def __init__(self, value):
-        """Define an expression that returns a given value."""
-        self.value = value
-
-    def evaluate(self, scope):
-        """Get the stored value."""
-        return self.value
-
-
-class ParameterEx(Expression):
-
-    def __init__(self, param_number):
-        """Define an expression that returns the value of a parameter."""
-        self.param_number = param_number
-
-    def evaluate(self, scope):
-        """Get the value of the parameter for this call."""
-        return scope._some_param_lookup_(self.param_number)
+#Definintion([FirstToken('Define'), SUBSIGNATURE, WordToken('to'),
+#             WordToken('be'), SUBSENTENCE], define_function)

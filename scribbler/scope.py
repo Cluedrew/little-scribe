@@ -124,38 +124,6 @@ class Definition:
         self.code = code
 
     @staticmethod
-    def from_define(head, body):
-        """Create a new function Definition from the Define.
-
-        TODO Eventually this should probably be moved to the modual where the
-        built in functions are provided, as it is just a built in, although an
-        unusual one.
-
-        :param head: The Sentence that defines the function signature.
-        :param body: The Sentence that defines the function body."""
-        pattern = []
-        iterator = iter(head)
-        params = []
-        token = next(iterator)
-        if not isinstance(token, FirstToken):
-            raise Exception('Error: head did not begin with token')
-        for token in iterator:
-            if isinstance(token, PeriodToken):
-                try:
-                    iter(iterator)
-                except StopIteration:
-                    break
-                raise Exception('Embedded Period.')
-            elif isinstance(token, WordToken):
-                pattern.append(token)
-            elif isinstance(token, Sentence):
-                pattern.append(SUBSENTENCE)
-                params.append(token)
-        # TODO
-        code = some_magic_function(params, body)
-        return Definition(pattern, code)
-
-    @staticmethod
     def _diff_element(self_el, other_el):
         """Difference level between two elements of a definition signature."""
         are_tokens = [

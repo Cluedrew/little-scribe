@@ -77,7 +77,10 @@ class WordToken(Token):
 
 
 class ValueToken(Token):
-    """A value Token is a hard coded value, is an entire sentence. """
+    """A value Token is a hard coded value, is an entire sentence."""
+
+    def get_value(self):
+        raise NotImplementedError()
 
 
 class NumberToken(ValueToken):
@@ -90,6 +93,9 @@ class NumberToken(ValueToken):
 
     def __repr__(self):
         return 'NumberToken({!r})'.format(self.text)
+
+    def get_value(self):
+        return int(self.text)
 
 
 WHITESPACE_EXP = re.compile('[{0.whitespace}]+'.format(string))

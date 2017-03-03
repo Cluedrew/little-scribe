@@ -43,6 +43,9 @@ class Sentence:
     def __len__(self):
         return len(self._children)
 
+    def __iter__(self):
+        return iter(self._children)
+
     def append(self, child)
         """Add a new Token to the end of the Sentence."""
         if isinstance(child, Sentence.ChildTypes):
