@@ -11,6 +11,8 @@ immutablity. (Scratch that, does not allow for parameters.)"""
 # I am going full: "Make this up as I go" here. Hopefully I can use that to
 # create a working version and refine it later. Or at least have a base.
 
+from itertools import count
+
 
 class FunctionCode:
     """Base class to implement the code behind a Definition."""
@@ -90,7 +92,7 @@ def define_function(scope, head, body):
     for token in iterator:
         if isinstance(token, PeriodToken):
             try:
-                iter(iterator)
+                next(iterator)
             except StopIteration:
                 break
             raise Exception('Embedded Period.')
@@ -101,7 +103,11 @@ def define_function(scope, head, body):
             params.append(token)
     # Create a subscope of scope with the parameter's defined.
     local_scope = Scope(scope)
-    # ...
+    for (param, pos) in zip(params, count(0)):
+        param_pat = []
+        for token in param:
+            # The same sort of loop.
+        local_scope = Definition(param_pat, Parameter(pos))
     # Creating the code for a user defined function.
     code = sentence_to_function_application(local_scope)
     # ? code = FunctionApplication.from_sentence(scope, sentence)

@@ -112,11 +112,8 @@ class Definition:
         parsing to match this definition.
     :ivar code: Object used to evaluate the function from its arguments.
 
-    [? I think this would be worth it for debugging. ?]
-    :ivar name: The full name of the function. Usually the pattern with the
-        parameters given.
-    [? Currently lacking type system... some day though. ?]
-    :ivar type: The function's type, Function <Args> to <Return>.
+    This should be expanded in later versions. But I think this is the
+    minimum required to get it working.
     """
 
     def __init__(self, pattern, code):
