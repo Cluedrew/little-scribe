@@ -10,14 +10,16 @@ from unittest.mock import (
 
 from parse import (
     Parser,
+    Sentence,
     )
 from scope import (
     Scope,
     )
-from tree import (
-    Paragraph,
-    Sentence,
+from tokenization import (
+    FirstToken,
+    PeriodToken,
     Token,
+    WordToken,
     )
 
 
@@ -41,29 +43,29 @@ def fake_parser(tokens):
 class TestParser(TestCase):
 
     def test__next_token(self):
-        parser = fake_parser([Token('period', '.')])
+        parser = fake_parser([PeriodToken('.')])
         token = parser._next_token()
-        self.assertEqual('period', token.kind)
+        self.assertIsInstance(token, PeriodToken)
         self.assertEqual('.', token.text)
 
     def test__push_back(self):
         parser = fake_parser([])
-        token = Token('period', '.')
+        token = PeriodToken('.')
         parser._push_back(token)
         self.assertIs(token, parser.head)
         self.assertIs(token, parser._next_token())
 
     def test__push_back_overload(self):
         parser = fake_parser([])
-        parser._push_back(Token('period', '.'))
+        parser._push_back(PeriodToken('.'))
         with self.assertRaises(ValueError):
-            parser._push_back(Token('word', 'go'))
+            parser._push_back(WordToken('go'))
 
     def test__stream_not_empty(self):
-        non_empty_stream = fake_parser([Token('period', '.')])
+        non_empty_stream = fake_parser([PeriodToken('.')])
         self.assertTrue(non_empty_stream._stream_not_empty())
         head_stream = fake_parser([])
-        head_stream._push_back(Token('period', '.'))
+        head_stream._push_back(PeriodToken('.'))
         self.assertTrue(head_stream)
         empty_stream = fake_parser([])
         self.assertFalse(empty_stream._stream_not_empty())
@@ -79,7 +81,7 @@ class TestParser(TestCase):
         self.assertEqual(3, not_empty_mock.call_count)
 
     def test_parse_paragraph(self):
-        data = [Token('first-word', 'Unit'), Token('period', '.')]
+        data = [FirstToken('Unit'), PeriodToken('.')]
         retval = Sentence(data)
         with patch('parse.Parser.parse_signature', return_value=retval,
                 autospec=True) as signature_mock:
@@ -93,15 +95,15 @@ class TestParser(TestCase):
     def test_parse_signature(self):
         # Define New value. to be Five. .
         parser = fake_parser([
-            Token('first-word', 'Define'), Token('first-word', 'New'),
-            Token('word', 'value'), Token('period', '.'), Token('word', 'to'),
-            Token('word', 'be'), Token('first-word', 'Five'),
-            Token('period', '.'), Token('period', '.'),
+            FirstToken('Define'), FirstToken('New'),
+            WordToken('value'), PeriodToken('.'), WordToken('to'),
+            WordToken('be'), FirstToken('Five'),
+            PeriodToken('.'), PeriodToken('.'),
             ])
         sig = parser.parse_signature()
         self.assertIsInstance(sig, Sentence)
-        self.assertIsInstance(sig.children[1], Sentence)
-        self.assertIsInstance(sig.children[4], Sentence)
-        self.assertEqual(sig.children[0].text, 'Define')
-        self.assertEqual(sig.children[5].kind, 'period')
-        self.assertEqual(sig.children[1].children[0].text, 'New')
+        self.assertIsInstance(sig._children[1], Sentence)
+        self.assertIsInstance(sig._children[4], Sentence)
+        self.assertEqual(sig._children[0].text, 'Define')
+        self.assertIsInstance(sig._children[5], PeriodToken)
+        self.assertEqual(sig._children[1]._children[0].text, 'New')

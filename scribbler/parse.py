@@ -7,7 +7,7 @@ import sys
 from scope import (
     Scope,
     )
-from tokenize import (
+from tokenization import (
     FirstToken,
     PeriodToken,
     Token,
@@ -15,12 +15,14 @@ from tokenize import (
     WordToken,
     )
 
+
 class Sentence:
     """A Sentence is a Little Scribe expression.
 
-    They are lists of Tokens and Sentences, the children of the node."""
+    Each also repersents a node on the parse graph, and has a list of
+    Sentences and Tokens, the children of the node."""
 
-    ChildTypes = (Sentence, Token)
+    ChildTypes = '(Sentence, Token)'
 
     def __init__(self, init=None):
         """Create a new Sentence structure.
@@ -46,7 +48,7 @@ class Sentence:
     def __iter__(self):
         return iter(self._children)
 
-    def append(self, child)
+    def append(self, child):
         """Add a new Token to the end of the Sentence."""
         if isinstance(child, Sentence.ChildTypes):
             self._children.append(child)
@@ -66,6 +68,8 @@ class Sentence:
         if isinstance(self._children[-1], Sentence):
             return self._children[-1].ends_with_dot()
         return False
+
+Sentence.ChildTypes = (Sentence, Token)
 
 
 class UnfinishedSentencesError(Exception):
@@ -98,7 +102,7 @@ class Parser:
     def __init__(self, token_stream):
         self.token_stream = token_stream
         self.head = None
-        self._token_iterator = Parse._Iter(self)
+        self._token_iterator = Parser._Iter(self)
 
     def _next_token(self):
         """Get the next token, either from the stream or the stored head."""
@@ -196,7 +200,7 @@ class Parser:
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(token, ValueToken):
-                node.append(Sentence([token])
+                node.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
 
@@ -208,9 +212,9 @@ class Parser:
         This will use tokens from the stream, but may not empty the stream.
 
         :return: A Sentence reperesenting the sentence."""
-        token = self._next_token
+        token = self._next_token()
         if not isinstance(token, FirstToken):
-            raise ParseError('Invalid start of Signature.')
+            raise ParseError('Invalid start of Signature: ' + str(token))
         node = Sentence([token])
         for token in self._token_iterator:
             if isinstance(token, FirstToken):

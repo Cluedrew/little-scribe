@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Tokenising modual for Little Scribe.
 
-Here tokenisation is responsible for converting a text stream into a stream
+Here tokenization is responsible for converting a text stream into a stream
 of tokens. It provides the Token class and various token stream classes."""
 
 
 import re
 import string
+import sys
 
 
 class Token:
@@ -117,7 +118,7 @@ def make_token(source_string):
     for token_kind in token_types:
         token_match = token_kind.regex.match(source_string)
         if token_match:
-            return (Token(token_kind, token_match.group()),
+            return (token_kind(token_match.group()),
                     source_string[token_match.end():])
     else:
         return (None, source_string)
@@ -137,3 +138,18 @@ def file_token_stream(file_name):
         for line in file.readlines():
             for token in line_token_stream(line):
                 yield token
+
+
+def tokenify(text):
+    """Convert a string to token, must convert exactly."""
+    for token_kind in token_types:
+        token_match = token_kind.regex.fullmatch(text)
+        if token_match:
+            return token_kind(text)
+    else:
+        raise ValueError('tokenify: \'' + text + '\' is not a token.')
+
+
+def tokenify_list(text_list):
+    """Convert a list of strings into a list of tokens."""
+    return [tokenify(text) for text in text_list]

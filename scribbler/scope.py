@@ -90,10 +90,27 @@ class Scope:
                 # This is adding to the same list its reading from.
                 self._definitions.append(definition)
 
+    def match_sentence(self, sentence):
+        """Get the definition that matches the Sentence."""
+        err = NoDefinitionError('Sentence has no match in scope.')
+        ptr = self.new_matcher()
+        try:
+            for el in sentence:
+                if isinstance(el, Token):
+                    ptr.next(el)
+                else:
+                    ptr.next_sub()
+            if ptr.has_end():
+                return ptr.end()
+            else:
+                raise err
+        except NoDefinitionError:
+            raise err
+
     class _Node:
         """Internal class used in constructing a tri, to store definions."""
 
-        def __init__(self)
+        def __init__(self):
             self.sub_type = None
             self.sub_node = None
             self.tokens = []
@@ -106,7 +123,7 @@ DEF_DIFF_UNIQUE = 'unique'
 
 
 class Definition:
-    """A Definition in Little Scribe. Currently only function definitions.
+    """A Definition in Little Scribe, a name bound to a value.
 
     :ivar pattern: A sequence that repersents the series of tokens used when
         parsing to match this definition.
@@ -171,7 +188,7 @@ class MatchPointer:
     def has_end(self):
         return self.cur_node.definition is not None
 
-    def next(self, token):
+    def next_token(self, token):
         for (t, node) in self.cur_node.tokens:
             if t == token:
                 self.cur_node = node
@@ -184,6 +201,17 @@ class MatchPointer:
             self.cur_node = self.cur_node.sub_node
         else:
             raise NoDefinitionError('No possible matches.')
+
+    def next(self, element):
+        self.next_token(element)
+
+    #def next(self, element):
+    #    if isinstance(element, Token):
+    #        self.next_token(element)
+    #    elif isinstance(element, Sentence):
+    #        self.next_sub()
+    #    else:
+    #        raise TypeError('MatchPointer.next') ~$!
 
     def sub_type(self):
         return self.cur_node.sub_type
