@@ -2,6 +2,10 @@
 
 Scribbler is the default compiler for Little Scribe.
 
+Currently it is very much in the "minimum viable product" stage. Very few
+features are implemented and I will probably have to redo a lot of the code
+once I have a better idea of how to design this progam.
+
 ## Usage ##
 scribbler [OPTIONS] [--] (FILES...)
 

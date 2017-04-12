@@ -137,12 +137,11 @@ class Parser:
             paragraph = self.parse_paragraph(scope)
 
     def parse_paragraph(self, scope):
-        """Parse a paragraph.
+        """Parse a paragraph. It is just a wrapper for now.
 
         :param scope: The scope the paragraph is being parsed within.
-        :return: A Paragraph"""
-        #return Paragraph(self.parse_expression(scope).children)
-        return Paragraph(self.parse_signature().children)
+        :return: A Sentence"""
+        return self.parse_expression(scope)
 
     def parse_sentence(self, scope):
         # Try: do the split expression/signature here, and also handle the

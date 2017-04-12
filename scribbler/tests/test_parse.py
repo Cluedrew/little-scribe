@@ -80,18 +80,6 @@ class TestParser(TestCase):
         self.assertEqual(2, paragraph_mock.call_count)
         self.assertEqual(3, not_empty_mock.call_count)
 
-    def test_parse_paragraph(self):
-        data = [FirstToken('Unit'), PeriodToken('.')]
-        retval = Sentence(data)
-        with patch('parse.Parser.parse_signature', return_value=retval,
-                autospec=True) as signature_mock:
-            parser = fake_parser([])
-            scope = Scope()
-            result = parser.parse_paragraph(scope)
-        signature_mock.assert_called_once_with(parser)
-        self.assertIsInstance(result, Paragraph)
-        self.assertIs(result.children, data)
-
     def test_parse_signature(self):
         # Define New value. to be Five. .
         parser = fake_parser([

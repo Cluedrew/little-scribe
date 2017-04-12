@@ -5,6 +5,12 @@ This includes the actual Definitions and tools for creating and manuplating
 both classes."""
 
 
+import sys
+from tokenization import (
+    PeriodToken,
+    Token,
+    )
+
 class NoDefinitionError(Exception):
     """No definition where a definition (or a group) was expected."""
 
@@ -61,6 +67,10 @@ class Scope:
                     raise ScopeFault('New definition would conflict.')
             else:
                 raise ScopeFault('Bad element in new definition.')
+        else:
+            if node.definition is not None:
+                raise ScopeFault('New definition would conflict.')
+            node.definition = definition
 
 
     def add_definition(self, definition):
@@ -92,20 +102,20 @@ class Scope:
 
     def match_sentence(self, sentence):
         """Get the definition that matches the Sentence."""
-        err = NoDefinitionError('Sentence has no match in scope.')
         ptr = self.new_matcher()
         try:
             for el in sentence:
-                if isinstance(el, Token):
+                if isinstance(el, PeriodToken):
+                    break
+                elif isinstance(el, Token):
                     ptr.next(el)
                 else:
                     ptr.next_sub()
             if ptr.has_end():
                 return ptr.end()
-            else:
-                raise err
         except NoDefinitionError:
-            raise err
+            raise
+        raise NoDefinitionError('Sentence has no match in scope.')
 
     class _Node:
         """Internal class used in constructing a tri, to store definions."""
@@ -115,6 +125,51 @@ class Scope:
             self.sub_node = None
             self.tokens = []
             self.definition = None
+
+        def print_tree(self, level=0, link=None, file=sys.stdout):
+            if link is not None:
+                print((' ' * level) + str(link) +
+                      (' <def>' if self.definition is not None else ''),
+                      file=file)
+            if self.sub_type is not None:
+                self.sub_node.print_tree(level + 1, self.sub_type, file=file)
+            for (token, node) in self.tokens:
+                node.print_tree(level + 1, token, file=file)
+
+    # Begin Scratch Pad
+    class _NodeNew:
+        """May become the new _Node type, adding common operations."""
+
+        class AddExistingError(Exception):
+            """Tried to add where the result was already defined."""
+
+        def __init__(self):
+            """Create a new empty node."""
+
+        def add_definition(self, definition):
+            """Add a definition if the _Node does not already have one."""
+
+        def add_child(self, link, child_node):
+            """Add a child node to this one with link.
+
+            :param link: A non-ending Token or SubSentence identifer.
+            :param child_node: A _Node with no parent."""
+
+        def get_child(self, link):
+            """Get the child accessable by link.
+
+            :param link: A non-ending Token or SubSentence identifer.
+            :return: A _Node or None."""
+    # End Scratch Pad
+
+    def print_definitions(self, file=sys.stdout):
+        """Print out the Definition.patterns in the Scope."""
+        for define in self._definitions:
+            print(str(define.pattern), file=file)
+
+    def print_tree(self, file=sys.stdout):
+        """Print out the tree of _Nodes in the tree."""
+        self._root.print_tree(file=file)
 
 
 DEF_DIFF_MATCH = 'match'
@@ -133,7 +188,7 @@ class Definition:
     minimum required to get it working.
     """
 
-    def __init__(self, pattern, code):
+    def __init__(self, pattern, code, type=None):
         self.pattern = pattern
         self.code = code
 
@@ -180,7 +235,7 @@ class MatchPointer:
         self.cur_node = scope._root
 
     def end(self):
-        definition = self.cur_node.defintion
+        definition = self.cur_node.definition
         if definition is None:
             raise NoDefinitionError('Is not a match.')
         return definition
