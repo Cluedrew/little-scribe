@@ -64,6 +64,10 @@ different parse modes. (The parse modes cut off a bunch of other issues.)
 Does it go by signature: `Define <signature> to be <expression>.` Or by Token,
 so that `Define` means the next subsentence is a signature.
 
+New related problem, the <signature> (the main Sentence and its children)
+have to be availible in <expression> so that they can be matched. Which means
+we have to stop after the signature
+
 The way the files are laid out should probably change. I was originally going
 for a more stuctures & functions approach but that doesn't work with Python
 as well. So I might convert it over which means files will be originized by
@@ -85,7 +89,7 @@ sentence against a signature. Both for normal parse mode and actually checking
 function definitions at the end.
 
 ##### Parsing Patterns
-There are two parse nodes:
+There are two parse modes:
 + **signature**, or pattern mode: Used to read in pattern and create new
     signatures. While in signature mode every FirstWord begins a sentence and
     every Period ends a sentence.

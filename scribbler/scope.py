@@ -136,32 +136,6 @@ class Scope:
             for (token, node) in self.tokens:
                 node.print_tree(level + 1, token, file=file)
 
-    # Begin Scratch Pad
-    class _NodeNew:
-        """May become the new _Node type, adding common operations."""
-
-        class AddExistingError(Exception):
-            """Tried to add where the result was already defined."""
-
-        def __init__(self):
-            """Create a new empty node."""
-
-        def add_definition(self, definition):
-            """Add a definition if the _Node does not already have one."""
-
-        def add_child(self, link, child_node):
-            """Add a child node to this one with link.
-
-            :param link: A non-ending Token or SubSentence identifer.
-            :param child_node: A _Node with no parent."""
-
-        def get_child(self, link):
-            """Get the child accessable by link.
-
-            :param link: A non-ending Token or SubSentence identifer.
-            :return: A _Node or None."""
-    # End Scratch Pad
-
     def print_definitions(self, file=sys.stdout):
         """Print out the Definition.patterns in the Scope."""
         for define in self._definitions:

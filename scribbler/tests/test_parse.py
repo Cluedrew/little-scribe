@@ -11,6 +11,7 @@ from unittest.mock import (
 from parse import (
     Parser,
     Sentence,
+    TokenStream,
     )
 from scope import (
     Scope,
@@ -95,3 +96,36 @@ class TestParser(TestCase):
         self.assertEqual(sig._children[0].text, 'Define')
         self.assertIsInstance(sig._children[5], PeriodToken)
         self.assertEqual(sig._children[1]._children[0].text, 'New')
+
+
+class TestTokenStream(TestCase):
+
+    def test_iter_interface(self):
+        ts = TokenStream(FakeStream(
+            [FirstToken('Test'), WordToken('sentence'), PeriodToken()]))
+        self.assertIs(ts, iter(ts))
+        self.assertEqual(FirstToken('Test'), next(ts))
+        self.assertEqual(WordToken('sentence'), next(ts))
+        self.assertEqual(PeriodToken(), next(ts))
+        with self.assertRaises(StopIteration):
+            next(ts)
+
+    def test_empty(self):
+        ts = TokenStream(FakeStream([PeriodToken()]))
+        self.assertFalse(ts.is_empty())
+        self.assertTrue(ts.not_empty())
+        next(ts)
+        self.assertTrue(ts.is_empty())
+        self.assertFalse(ts.not_empty())
+
+    def test_push_back(self):
+        ts = TokenStream(FakeStream([PeriodToken()]))
+        ts.push_back(FirstToken('Test'))
+        self.assertEqual(FirstToken('Test'), next(ts))
+        self.assertEqual(PeriodToken(), next(ts))
+
+    def test_push_back_overload(self):
+        ts = TokenStream(FakeStream([]))
+        ts.push_back(PeriodToken())
+        with self.assertRaises(ValueError):
+            ts.push_back(PeriodToken())

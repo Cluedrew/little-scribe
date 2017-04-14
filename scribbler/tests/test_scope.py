@@ -30,6 +30,6 @@ class TestScope(TestCase):
         test_def = Definition(pattern, code)
         scope = Scope(None)
         scope.add_definition(test_def)
-        scope.print_definitions()
-        scope.print_tree()
+        #scope.print_definitions()
+        #scope.print_tree()
         self.assertIs(test_def, scope.match_sentence(to_match))

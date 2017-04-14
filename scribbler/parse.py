@@ -69,6 +69,16 @@ class Sentence:
             return self._children[-1].ends_with_dot()
         return False
 
+    def is_primitive(self):
+        return (1 == len(self._children) and
+            isinstance(self._children, ValueToken))
+
+    def get_value(self):
+        if not self.is_primitive():
+            raise ValueError(
+                'Sentence.get_value: requires primitive Sentence.')
+        return self._children[0].get_value()
+
 Sentence.ChildTypes = (Sentence, Token)
 
 
@@ -135,6 +145,21 @@ class Parser:
         scope = Scope()
         while self._stream_not_empty():
             paragraph = self.parse_paragraph(scope)
+
+    def iter_paragraph(self, scope):
+        class _IterParagraph:
+
+            def __init__(self, parser, scope):
+                self.parser = parser
+                self.scope = scope
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                return self.parser.parse_paragraph(scope)
+
+        return _IterParagraph(self, scope)
 
     def parse_paragraph(self, scope):
         """Parse a paragraph. It is just a wrapper for now.
@@ -241,3 +266,43 @@ class Parser:
 
         def __next__(self):
             return self.parser._next_token()
+
+
+class TokenStream:
+
+    def __init__(self, iter):
+        """Create the TokenStream by wrapping around an iterator.
+
+        :param iter: An iterator that returns Tokens."""
+        self.iter = iter
+        self.head = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.head is None:
+            return next(self.iter)
+        next_token = self.head
+        self.head = None
+        return next_token
+
+    def is_empty(self):
+        if self.head is not None:
+            return False
+        try:
+            self.head = next(self.iter)
+            return False
+        except StopIteration:
+            return True
+        #if self.head is None:
+        #    self.head = next(self.iter, None)
+        #return self.head is None
+
+    def not_empty(self):
+        return not self.is_empty()
+
+    def push_back(self, token):
+        if self.head is not None:
+            raise ValueError('TokenStream.push_back: Already has head.')
+        self.head = token

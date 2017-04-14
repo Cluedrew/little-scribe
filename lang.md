@@ -98,7 +98,7 @@ Add imports and support for moduals: `Import "file/path.name".`
 
 Add nested scopes, at first this will probably always have to be done
 explicately with `Begin ... end.` but later may become a implied feature
-in some locations.
+in some locations. It might be a new type of SubSentence: `SubBlock`
 
 Add support for lists of arguments. I'm thinking of using the comma for that.
 
