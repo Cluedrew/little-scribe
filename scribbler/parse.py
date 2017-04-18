@@ -28,6 +28,7 @@ class Sentence:
         """Create a new Sentence structure.
 
         :param init: Either None, a Token, or an interable of ChildTypes."""
+        # Interal data array.
         self._children = []
         if isinstance(init, Token):
             self._children.append(init)
@@ -38,6 +39,8 @@ class Sentence:
                 if not isinstance(child, Sentence.ChildTypes):
                     raise TypeError('Sentence provided with non-child type')
                 self._children.append(child)
+        # Cache of definition look up.
+        self._definition = None
 
     def __getitem__(self, index):
         return self._children[index]
@@ -79,6 +82,18 @@ class Sentence:
                 'Sentence.get_value: requires primitive Sentence.')
         return self._children[0].get_value()
 
+    def set_definition(self, definition):
+        if self.is_primitive():
+            raise ValueError(
+                'Sentence.set_definition: requires non-primitive Sentence.')
+        self._definition = definition
+
+    def get_definition(self):
+        if self.is_primitive():
+            raise ValueError(
+                'Sentence.get_definition: requires non-primitive Sentence.')
+        return self._definition
+
 Sentence.ChildTypes = (Sentence, Token)
 
 
@@ -110,40 +125,12 @@ class Parser:
     """This class repersents a parser."""
 
     def __init__(self, token_stream):
-        self.token_stream = token_stream
-        self.head = None
-        self._token_iterator = Parser._Iter(self)
-
-    def _next_token(self):
-        """Get the next token, either from the stream or the stored head."""
-        if self.head is not None:
-            token = self.head
-            self.head = None
-            return token
-        return next(self.token_stream)
-
-    def _push_back(self, token):
-        """Return a token to the front of the stream."""
-        if self.head is None:
-            self.head = token
-        else:
-            raise ValueError('There is already a old head.')
-
-    def _stream_not_empty(self):
-        """Are there tokens left to parse?"""
-        if self.head is not None:
-            return True
-        try:
-            self._push_back(self._next_token())
-        except StopIteration:
-            return False
-        else:
-            return True
+        self._token_stream = TokenStream(token_stream)
 
     def parse_page(self):
         """Parse a page of Little Scribe code."""
         scope = Scope()
-        while self._stream_not_empty():
+        while self._token_stream.not_empty():
             paragraph = self.parse_paragraph(scope)
 
     def iter_paragraph(self, scope):
@@ -171,7 +158,7 @@ class Parser:
     def parse_sentence(self, scope):
         # Try: do the split expression/signature here, and also handle the
         # start of the sentence.
-        start = self._next_token()
+        start = next(self._token_stream)
         # Check Start
         node = Sentence([start])
         if some_condition:
@@ -188,7 +175,7 @@ class Parser:
 
         :param scope: The scope the expression is being parsed within.
         :return: A Sentence."""
-        token = self._next_token()
+        token = next(self._token_stream)
         if isinstance(token, ValueToken):
             return Sentence([token])
         elif not isinstance(token, FirstToken):
@@ -196,9 +183,9 @@ class Parser:
                 'Cannot begin a sentence with "' + str(token) + '"')
         node = Sentence([token])
         part_match = scope.new_matcher()
-        for token in self._token_iterator:
+        for token in self._token_stream:
             if isinstance(token, FirstToken):
-                self._push_back(token)
+                self._token_stream.push_back(token)
                 sub = part_match.sub_type()
                 if sub is SUBSENTENCE:
                     node.append(self.parse_expression(scope))
@@ -236,13 +223,13 @@ class Parser:
         This will use tokens from the stream, but may not empty the stream.
 
         :return: A Sentence reperesenting the sentence."""
-        token = self._next_token()
+        token = next(self._token_stream)
         if not isinstance(token, FirstToken):
             raise ParseError('Invalid start of Signature: ' + str(token))
         node = Sentence([token])
-        for token in self._token_iterator:
+        for token in self._token_stream:
             if isinstance(token, FirstToken):
-                self._push_back(token)
+                self._token_stream.push_back(token)
                 node.append(self.parse_signature())
             elif isinstance(token, WordToken):
                 node.append(token)
@@ -255,17 +242,45 @@ class Parser:
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
 
-    class _Iter:
-        """A convenience iterator for internal use in Parser."""
+    def make_inner_scope(self, outer_scope, signature):
+        inner_scope = Scope(outer_scope)
+        def add_def(base_sentence):
+             definition = Definition.from_sentence(base_sentence, None)
+             inner_scope.add_definition(definition)
+        add_def(signature)
+        for el in signature:
+            if isinstance(el, Sentence):
+                add_def(el)
+        return inner_scope
 
-        def __init__(self, parser):
-            self.parser = parser
+    def parse_definition(self, outer_scope):
+        """Parse a definition from the incomming tokens.
 
-        def __iter__(self):
-            return self
+        This is technically a kind of expression, but there are a few special
+        rules that may force it to become seperate. This is temporary as it
+        is just the fastest way I can get this to work. I hope.
 
-        def __next__(self):
-            return self.parser._next_token()
+        'Define Function or variable name. to be Body. .'"""
+        token = next(self._token_stream)
+        if 'Define' != token.text:
+            raise ParseError('Invalid start of Definition: ' + str(token))
+        node = Sentence(token)
+        sig = self.parse_signature(outer_scope)
+        node.append(sig)
+        for word in ['to', 'be']:
+            token = next(self._token_stream)
+            if token.text != word:
+                raise ParseError('Did not find ' + word + ' in definition.')
+            node.append(token)
+        inner_scope = self.make_inner_scope(outer_scope, signature)
+        node.append(self.parse_expression(inner_scope))
+        if self._token_stream.not_empty():
+            token = next(self._token_stream)
+            if isinstance(token, PeriodToken):
+                node.append(token)
+            else:
+                self._token_stream.push_back(token)
+        return node
 
 
 class TokenStream:
@@ -290,14 +305,8 @@ class TokenStream:
     def is_empty(self):
         if self.head is not None:
             return False
-        try:
-            self.head = next(self.iter)
-            return False
-        except StopIteration:
-            return True
-        #if self.head is None:
-        #    self.head = next(self.iter, None)
-        #return self.head is None
+        self.head = next(self.iter, None)
+        return self.head is None
 
     def not_empty(self):
         return not self.is_empty()

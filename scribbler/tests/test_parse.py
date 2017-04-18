@@ -43,40 +43,12 @@ def fake_parser(tokens):
 
 class TestParser(TestCase):
 
-    def test__next_token(self):
-        parser = fake_parser([PeriodToken('.')])
-        token = parser._next_token()
-        self.assertIsInstance(token, PeriodToken)
-        self.assertEqual('.', token.text)
-
-    def test__push_back(self):
-        parser = fake_parser([])
-        token = PeriodToken('.')
-        parser._push_back(token)
-        self.assertIs(token, parser.head)
-        self.assertIs(token, parser._next_token())
-
-    def test__push_back_overload(self):
-        parser = fake_parser([])
-        parser._push_back(PeriodToken('.'))
-        with self.assertRaises(ValueError):
-            parser._push_back(WordToken('go'))
-
-    def test__stream_not_empty(self):
-        non_empty_stream = fake_parser([PeriodToken('.')])
-        self.assertTrue(non_empty_stream._stream_not_empty())
-        head_stream = fake_parser([])
-        head_stream._push_back(PeriodToken('.'))
-        self.assertTrue(head_stream)
-        empty_stream = fake_parser([])
-        self.assertFalse(empty_stream._stream_not_empty())
-
     def test_parse_page(self):
         with patch('parse.Parser.parse_paragraph', side_effect=[1, 2, 3],
                 autospec=True) as paragraph_mock:
-            with patch('parse.Parser._stream_not_empty', autospec=True,
+            with patch('parse.TokenStream.not_empty', autospec=True,
                     side_effect=[True, True, False]) as not_empty_mock:
-                parser = fake_parser([])
+                parser = fake_parser(['One', 'two'])
                 parser.parse_page()
         self.assertEqual(2, paragraph_mock.call_count)
         self.assertEqual(3, not_empty_mock.call_count)

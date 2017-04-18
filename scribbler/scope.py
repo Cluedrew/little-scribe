@@ -167,6 +167,21 @@ class Definition:
         self.code = code
 
     @staticmethod
+    def from_sentence(sentence, code):
+        """Short cut, create a definition pattern from a sentence.
+
+        The pattern uses all SUBSENTENCE values and strips the dot."""
+        pattern = []
+        for el in sentence:
+            if isinstance(el, PeriodToken):
+                return Definition(pattern, code)
+            elif isinstance(el, Token):
+                pattern.append(el)
+            elif isinstance(el, Sentence):
+                pattern.append(SUBSENTENCE)
+        raise ValueError('Definition.from_sentence: Sentence untermainated.')
+
+    @staticmethod
     def _diff_element(self_el, other_el):
         """Difference level between two elements of a definition signature."""
         are_tokens = [
