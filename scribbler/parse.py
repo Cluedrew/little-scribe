@@ -242,7 +242,8 @@ class Parser:
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
 
-    def make_inner_scope(self, outer_scope, signature):
+    @staticmethod
+    def make_inner_scope(outer_scope, signature):
         inner_scope = Scope(outer_scope)
         def add_def(base_sentence):
              definition = Definition.from_sentence(base_sentence, None)

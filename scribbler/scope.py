@@ -72,7 +72,6 @@ class Scope:
                 raise ScopeFault('New definition would conflict.')
             node.definition = definition
 
-
     def add_definition(self, definition):
         """Add a new definition to the scope.
 
@@ -144,6 +143,28 @@ class Scope:
     def print_tree(self, file=sys.stdout):
         """Print out the tree of _Nodes in the tree."""
         self._root.print_tree(file=file)
+
+
+# TRYING THIS OUT
+class FunctionScope(Scope):
+    """A sub-scope for use within a function. (Something, it is a mess.)"""
+
+    def __init__(self, parent, signature):
+        super(FunctionScope, self).__init__(parent)
+        self.signature = signature
+        self.func = Definition.from_sentence(signature, 'This function')
+        self.params = []
+        for element in signature:
+            if isinstance(element, Sentence):
+                self.add_definition(Definition.from_sentence(element, None)
+
+    def apply(self, *args):
+        sub = FunctionScope(self._parent, self.signature)
+        sub._apply(*args)
+
+    def _apply(self, *args):
+        for (index, param) in enumerate(self.params):
+            param.code = args[index]
 
 
 DEF_DIFF_MATCH = 'match'
