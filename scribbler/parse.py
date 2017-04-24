@@ -49,6 +49,17 @@ class Sentence:
     def __iter__(self):
         return iter(self._children)
 
+    def __eq__(self, other):
+        if len(self._childern) != len(other._children):
+            return False
+        for (mine, yours) in zip(self._children, other._children):
+            if type(mine) != type(yours) or mine != yours:
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self == other
+
     def append(self, child):
         """Add a new Token to the end of the Sentence."""
         if isinstance(child, Sentence.ChildTypes):
@@ -133,19 +144,8 @@ class Parser:
             paragraph = self.parse_paragraph(scope)
 
     def iter_paragraph(self, scope):
-        class _IterParagraph:
-
-            def __init__(self, parser, scope):
-                self.parser = parser
-                self.scope = scope
-
-            def __iter__(self):
-                return self
-
-            def __next__(self):
-                return self.parser.parse_paragraph(scope)
-
-        return _IterParagraph(self, scope)
+        while self._token_stream.not_empty():
+            yield self.parse_paragraph(scope)
 
     def parse_paragraph(self, scope):
         """Parse a paragraph. It is just a wrapper for now.
@@ -315,3 +315,9 @@ class TokenStream:
         if self.head is not None:
             raise ValueError('TokenStream.push_back: Already has head.')
         self.head = token
+
+
+def string_to_signature(text):
+    """Convert a string into a signature."""
+    parser = Parser(text_token_stream(text))
+    return parser.parse_signature()

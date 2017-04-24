@@ -7,7 +7,7 @@ from unittest import TestCase
 from tokenization import (
     file_token_stream,
     FirstToken,
-    line_token_stream,
+    text_token_stream,
     make_token,
     PeriodToken,
     Token,
@@ -49,8 +49,8 @@ class TestMakeToken(TestCase):
 
 class TestSimpleStreams(TestCase):
 
-    def test_line_token_stream(self):
-        tokens = list(line_token_stream('  Hello world. '))
+    def test_text_token_stream(self):
+        tokens = list(text_token_stream('  Hello world. '))
         self.assertEqual([FirstToken('Hello'),
                           WordToken('world'),
                           PeriodToken('.')], tokens)

@@ -58,35 +58,42 @@ Built in functions are manually created and loaded into the top-level scope
 when we begin executing.
 
 
-Problems:
-My biggest problem right now is how to handle subsentences and the two
-different parse modes. (The parse modes cut off a bunch of other issues.)
-Does it go by signature: `Define <signature> to be <expression>.` Or by Token,
-so that `Define` means the next subsentence is a signature.
+New Plan:
+Because I think I have figured out enough to create a new plan.
 
-New related problem, the <signature> (the main Sentence and its children)
-have to be availible in <expression> so that they can be matched. Which means
-we have to stop after the signature
+I am going to need keywords, I thought the use of built in functions would
+replace that, but it will not completely. `Define` will have to be a keyword.
+It will do the following:
++   The first sub-sentence in the sentence is read in signature parse mode.
++   That sub-sentence, and all of its direct sub-sentences will be avalible in
+    the later sub-sentences.
++   None of the sub-sentences are evaluated before passing them to the
+    function, it must take the raw sentences.
 
-The way the files are laid out should probably change. I was originally going
-for a more stuctures & functions approach but that doesn't work with Python
-as well. So I might convert it over which means files will be originized by
-class instead of step in the logic.
+This should match conventions I that (planned) before, but lets the parser
+know these things. Define sentences will almost always create a new
+definition, the first sub-sentence (however this is not enforced), the other
+rules allow this by given access to the text and allowing for self referental
+and parameterised definitions.
 
-Execution
-I realized I am fooling myself by trying to create parsing and execution
-seperately. Well they are sort of seperate, but they are tied together in the
-REPL.
+Definitions use the full signature, parameters will be repersented by sub-
+sentences instead of markers. This means the sentence can directly used as
+the signature and they can have the names stored in line. Types might have
+to be stored in parallel, but I think that is fine. The parsing information
+has of course been move to the Define keyword.
 
-On each Page (for now, we will have one page/source file) we read in a
-paragraph and evaluate a result. The result can be an Action object which is
-then executed (usually modifying the scope), if it is not we convert the
-object to a string and print it.
+Function definitions will keep a copy of the scope they are defined within.
+It can be updated but it should retain all of the definitions the function
+needs. It can then create an internal scope with all the parameters. I am
+not sure how this will handle nested functions, but we don't have that yet.
 
-So I have the basic page-paragraph-sentence/signature layout in the parser
-already. Might need some work. Main issue is I need a way to check an existing
-sentence against a signature. Both for normal parse mode and actually checking
-function definitions at the end.
+I may use an 'Action' type to implement definitions, which are just values
+of a type that the environment executes instead of printing. They have access
+to the enclosing scope for this, so they can add definitions.
+
+I am dropping binding of definitions to sentences, I've taken out some of it
+all ready. The binding would be great for efficiency but requires some over
+head that is just not need now. We will look up a sentence when we need it.
 
 ##### Parsing Patterns
 There are two parse modes:

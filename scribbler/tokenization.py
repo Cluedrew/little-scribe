@@ -33,6 +33,9 @@ class Token:
             raise TypeError('Tokens can only be equal to other Tokens.')
         return (self.text == other.text) and (type(self) == type(other))
 
+    def __ne__(self, other):
+        return not self == other
+
     def __str__(self):
         return self.text
 
@@ -124,10 +127,10 @@ def make_token(source_string):
         return (None, source_string)
 
 
-def line_token_stream(line_text):
+def text_token_stream(base_text):
     """Convert a single line into a stream of tokens."""
-    while line_text:
-        (token, line_text) = make_token(line_text)
+    while base_text:
+        (token, base_text) = make_token(base_text)
         if token:
             yield token
 
@@ -136,7 +139,7 @@ def file_token_stream(file_name):
     """Convert a text file into a stream of tokens."""
     with open(file_name) as file:
         for line in file.readlines():
-            for token in line_token_stream(line):
+            for token in text_token_stream(line):
                 yield token
 
 

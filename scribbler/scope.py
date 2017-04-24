@@ -5,6 +5,7 @@ This includes the actual Definitions and tools for creating and manuplating
 both classes."""
 
 
+import enum
 import sys
 from tokenization import (
     PeriodToken,
@@ -157,7 +158,7 @@ class FunctionScope(Scope):
         self.params = []
         for element in signature:
             if isinstance(element, Sentence):
-                self.add_definition(Definition.from_sentence(element, None)
+                self.add_definition(Definition.from_sentence(element, None))
 
     def apply(self, *args):
         sub = FunctionScope(self._parent, self.signature)
@@ -167,6 +168,12 @@ class FunctionScope(Scope):
         for (index, param) in enumerate(self.params):
             param.code = args[index]
 
+
+@enum.unique
+class Def_Diff(enum.Enum):
+    MATCH = enum.auto()
+    CONFLICT = enum.auto()
+    UNIQUE = enum.auto()
 
 DEF_DIFF_MATCH = 'match'
 DEF_DIFF_CONFLICT = 'conflict'
