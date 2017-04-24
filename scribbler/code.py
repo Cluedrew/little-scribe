@@ -9,11 +9,32 @@ Anyways, I think that these should be enough, until we start adding
 immutablity. (Scratch that, does not allow for parameters.)"""
 
 
-from itertools import count
+from parse import (
+    string_to_signature,
+    )
 from scope import (
     Definition,
     Scope,
     )
+
+
+def evaluate(sentence, scope):
+    """Evaluate a Sentence within a Scope."""
+    if sentence.is_primitive():
+        return sentence.get_value()
+    func = scope.match_sentence(sentence)
+    params = []
+    # Define disables pre-evaluation.
+    if sentence[0].text == 'Define':
+        for item in sentence.iter_sub():
+            params.append(item)
+        return func(scope, *params)
+    # All other functions take the results of their arguments,
+    # not the arguments themselves.
+    else:
+        for item in sentence.iter_sub():
+            params.append(evaluate(item, scope))
+        return func(*params)
 
 
 def define_function(scope, head, body):
@@ -23,9 +44,8 @@ def define_function(scope, head, body):
     :param head: The Sentence that defines the function signature.
     :param body: The Sentence that defines the function body."""
     params = []
-    for item in head:
-        if isinstance(item, Sentence):
-            params.append(item)
+    for item in head.iter_sub():
+        params.append(item)
 
     def eval_function(args):
         local_scope = Scope(scope)
@@ -37,10 +57,8 @@ def define_function(scope, head, body):
     return eval_function
 
 
-define_definition = Definintion(
-   [FirstToken('Define'), SUBSIGNATURE,
-    WordToken('to'), WordToken('be'), SUBSENTENCE],
-   define_function)
+define_definition = Definition(
+    string_to_signature('Define Head. to be Body. .'), define_function)
 
 
 def sentence_to_function_application(scope, sentence):
@@ -64,9 +82,9 @@ def create_built_in_scope():
     scope = Scope()
     scope.add_definition(define_definition)
     scope.add_definition(Definition(
-        [FirstToken('Add'), SUBSENTENCE, WordToken('to'), SUBSENTENCE],
-        lambda(left, right): left + right))
+        string_to_signature('Add Left hand side. to Right hand side. .'),
+        lambda left, right: left + right))
     scope.add_definition(Definition(
-        [FirstToken('Minus'), SUBSENTENCE, WordToken('by'), SUBSENTENCE],
-        lambda(left, right): left - right))
+        string_to_signature('Minus Left hand side. by Right hand side. .'),
+        lambda left, right: left - right))
     return scope

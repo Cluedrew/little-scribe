@@ -11,6 +11,7 @@ from unittest.mock import (
 from parse import (
     Parser,
     Sentence,
+    string_to_signature,
     TokenStream,
     )
 from scope import (
@@ -22,6 +23,16 @@ from tokenization import (
     Token,
     WordToken,
     )
+
+
+class TestSentence(TestCase):
+
+    def test_equal_operator(self):
+        left = Sentence([FirstToken('Height'), WordToken('of'),
+                         WordToken('box'), PeriodToken()])
+        right = Sentence([FirstToken('Height'), WordToken('of'),
+                          WordToken('box'), PeriodToken()])
+        self.assertTrue(left == right)
 
 
 class FakeStream:
@@ -101,3 +112,19 @@ class TestTokenStream(TestCase):
         ts.push_back(PeriodToken())
         with self.assertRaises(ValueError):
             ts.push_back(PeriodToken())
+
+
+class TestStringToSignature(TestCase):
+
+    def test_flat_signature(self):
+        result = string_to_signature('Frames per second.')
+        self.assertEqual(FirstToken('Frames'), result[0])
+        self.assertEqual(WordToken('per'), result[1])
+        self.assertEqual(WordToken('second'), result[2])
+        self.assertEqual(PeriodToken(), result[3])
+
+    def test_nested_signature(self):
+        result = string_to_signature('Define Head. to be Body. .')
+        self.assertEqual(FirstToken('Head'), result[1][0])
+        self.assertEqual(PeriodToken(), result[1][1])
+        self.assertEqual(WordToken('to'), result[2])

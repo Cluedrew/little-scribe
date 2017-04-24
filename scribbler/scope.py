@@ -7,6 +7,13 @@ both classes."""
 
 import enum
 import sys
+# Would be circlular:
+#from parse import (
+#    string_to_signature,
+#    )
+from sentence import (
+    Sentence,
+    )
 from tokenization import (
     PeriodToken,
     Token,
@@ -47,38 +54,34 @@ class Scope:
 
     def _add_to_tree(self, definition):
         node = self._root
-        for el in definition.pattern:
-            if isinstance(el, Token):
+        for item in definition.name:
+            if isinstance(item, PeriodToken):
+                break
+            elif isinstance(item, Token):
                 for t,n in node.tokens:
-                    if t == el:
+                    if t == item:
                         node = n
                         break
                 else:
                     new_node = Scope._Node()
-                    node.tokens.append( (el, new_node) )
+                    node.tokens.append( (item, new_node) )
                     node = new_node
-            elif el is SUBSENTENCE or el is SUBSIGNATURE:
-                if node.sub_type is el:
-                    node = node.sub_node
-                elif node.sub_type is None:
-                    node.sub_type = el
+            elif isinstance(item, Sentence):
+                if node.sub_node is None:
                     node.sub_node = Scope._Node()
-                    node = node.sub_node
-                else:
-                    raise ScopeFault('New definition would conflict.')
+                node = node.sub_node
             else:
-                raise ScopeFault('Bad element in new definition.')
-        else:
-            if node.definition is not None:
-                raise ScopeFault('New definition would conflict.')
-            node.definition = definition
+                raise ScopeFault('Sentence with illegial child type.')
+        if node.definition is not None:
+            raise ScopeFault('New definition would conflict.')
+        node.definition = definition
 
     def add_definition(self, definition):
         """Add a new definition to the scope.
 
         It must not conflict with any existing definition in the scope."""
         for existing in self._iter_definitions():
-            if existing.has_conflict(definition):
+            if existing.is_conflict(definition):
                 raise ValueError('New definition conflicts with existing '
                                  'definition in scope.')
         else:
@@ -147,33 +150,11 @@ class Scope:
         self._root.print_tree(file=file)
 
 
-# TRYING THIS OUT
-class FunctionScope(Scope):
-    """A sub-scope for use within a function. (Something, it is a mess.)"""
-
-    def __init__(self, parent, signature):
-        super(FunctionScope, self).__init__(parent)
-        self.signature = signature
-        self.func = Definition.from_sentence(signature, 'This function')
-        self.params = []
-        for element in signature:
-            if isinstance(element, Sentence):
-                self.add_definition(Definition.from_sentence(element, None))
-
-    def apply(self, *args):
-        sub = FunctionScope(self._parent, self.signature)
-        sub._apply(*args)
-
-    def _apply(self, *args):
-        for (index, param) in enumerate(self.params):
-            param.code = args[index]
-
-
 @enum.unique
 class Def_Diff(enum.Enum):
-    MATCH = enum.auto()
-    CONFLICT = enum.auto()
-    UNIQUE = enum.auto()
+    MATCH = 0
+    CONFLICT = 1
+    UNIQUE = 2
 
 DEF_DIFF_MATCH = 'match'
 DEF_DIFF_CONFLICT = 'conflict'
@@ -191,35 +172,15 @@ class Definition:
     minimum required to get it working.
     """
 
-    def __init__(self, pattern, code, type=None):
-        self.pattern = pattern
+    def __init__(self, name, code, type=None):
+        self.name = name
         self.code = code
         self.type = type
-        self._scope = None
 
-    @staticmethod
-    def from_sentence(sentence, code):
-        """Short cut, create a definition pattern from a sentence.
-
-        The pattern uses all SUBSENTENCE values and strips the dot."""
-        if sentence.is_primitive():
-            raise ValueError('Definition.from_sentence: '
-                'May not define primitive sentence.')
-        pattern = []
-        for (pos, item) in enumerate(sentence):
-            if isinstance(item, PeriodToken):
-                if pos < len(sentence) - 1:
-                    raise ValueError('Definition.from_sentence: '
-                        'Sentence with embedded period.')
-                return Definition(pattern, code)
-            elif isinstance(item, FirstToken) and 0 != pos:
-                raise ValueError('Definition.from_sentence: '
-                    'Sentence with embedded first word.')
-            elif isinstance(item, Token):
-                pattern.append(item)
-            elif isinstance(item, Sentence):
-                pattern.append(SUBSENTENCE)
-        raise ValueError('Definition.from_sentence: Sentence untermainated.')
+    #@staticmethod
+    #def from_text(text, code, type=None):
+    #    """Create the Definition name from text."""
+    #    return Definition(string_to_signature(text), code, type)
 
     @staticmethod
     def _diff_element(self_el, other_el):
@@ -230,18 +191,18 @@ class Definition:
             return DEF_DIFF_MATCH if self_el == other_el else DEF_DIFF_UNIQUE
         if any(are_tokens):
             return DEF_DIFF_UNIQUE
-        return DEF_DIFF_MATCH if self_el == other_el else DEF_DIFF_CONFLICT
+        return DEF_DIFF_MATCH
 
     def diff(self, other):
         """Get the level of difference between two definitions."""
-        if not isinstance(other, Signature):
-            raise TypeError('diff: other is not a Signature')
-        for (self_element, other_element) in zip(self._tokens, other._tokens):
-            result = self._diff_element(self_element, other_element)
+        if not isinstance(other, Definition):
+            raise TypeError('Definition.diff: other is not a Definition.')
+        for (mine, yours) in zip(self.name, other.name):
+            result = self._diff_element(mine, yours)
             if DEF_DIFF_MATCH != result:
                 return result
         else:
-            return (DEF_DIFF_MATCH if len(self._tokens) == len(other._tokens)
+            return (DEF_DIFF_MATCH if len(self.name) == len(other.name)
                     else DEF_DIFF_UNIQUE)
 
     def is_match(self, other):
@@ -252,13 +213,6 @@ class Definition:
 
     def is_conflict(self, other):
         return DEF_DIFF_CONFLICT is self.diff(other)
-
-    def enclosing_scope(self):
-        return self._scope
-
-
-SUBSENTENCE = 'subsentence'
-SUBSIGNATURE = 'subsignature'
 
 
 class MatchPointer:
@@ -290,15 +244,9 @@ class MatchPointer:
             raise NoDefinitionError('No possible matches.')
 
     def next(self, element):
-        self.next_token(element)
-
-    #def next(self, element):
-    #    if isinstance(element, Token):
-    #        self.next_token(element)
-    #    elif isinstance(element, Sentence):
-    #        self.next_sub()
-    #    else:
-    #        raise TypeError('MatchPointer.next') ~$!
-
-    def sub_type(self):
-        return self.cur_node.sub_type
+        if isinstance(element, Token):
+            self.next_token(element)
+        elif isinstance(element, Sentence) or element is None:
+            self.next_sub()
+        else:
+            raise TypeError('MatchPointer.next: element has invalid type.')

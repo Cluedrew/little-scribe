@@ -7,104 +7,17 @@ import sys
 from scope import (
     Scope,
     )
+from sentence import (
+    Sentence,
+    )
 from tokenization import (
     FirstToken,
     PeriodToken,
+    text_token_stream,
     Token,
     ValueToken,
     WordToken,
     )
-
-
-class Sentence:
-    """A Sentence is a Little Scribe expression.
-
-    Each also repersents a node on the parse graph, and has a list of
-    Sentences and Tokens, the children of the node."""
-
-    ChildTypes = '(Sentence, Token)'
-
-    def __init__(self, init=None):
-        """Create a new Sentence structure.
-
-        :param init: Either None, a Token, or an interable of ChildTypes."""
-        # Interal data array.
-        self._children = []
-        if isinstance(init, Sentence.ChildTypes):
-            self._children.append(init)
-        elif hasattr(init, '__iter__'):
-            for child in init:
-                if not isinstance(child, Sentence.ChildTypes):
-                    raise TypeError('Sentence provided with non-child type')
-                self._children.append(child)
-        # Cache of definition look up.
-        self._definition = None
-
-    def __getitem__(self, index):
-        return self._children[index]
-
-    def __len__(self):
-        return len(self._children)
-
-    def __iter__(self):
-        return iter(self._children)
-
-    def __eq__(self, other):
-        if len(self._childern) != len(other._children):
-            return False
-        for (mine, yours) in zip(self._children, other._children):
-            if type(mine) != type(yours) or mine != yours:
-                return False
-        return True
-
-    def __ne__(self, other):
-        return not self == other
-
-    def append(self, child):
-        """Add a new Token to the end of the Sentence."""
-        if isinstance(child, Sentence.ChildTypes):
-            self._children.append(child)
-        else:
-            raise TypeError('Sentence provided with non-child type')
-
-    def write(self, to=sys.stdout, prefix=''):
-        for child in self.children:
-            if isinstance(child, Token):
-                child.write(to, prefix)
-            else:
-                child.write(to, prefix + '  ')
-
-    def ends_with_dot(self):
-        if isinstance(self._children[-1], PeriodToken):
-            return True
-        if isinstance(self._children[-1], Sentence):
-            return self._children[-1].ends_with_dot()
-        return False
-
-    def is_primitive(self):
-        return (1 == len(self._children) and
-            isinstance(self._children, ValueToken))
-
-    def get_value(self):
-        if not self.is_primitive():
-            raise ValueError(
-                'Sentence.get_value: requires primitive Sentence.')
-        return self._children[0].get_value()
-
-    def set_definition(self, definition):
-        if self.is_primitive():
-            raise ValueError(
-                'Sentence.set_definition: requires non-primitive Sentence.')
-        self._definition = definition
-
-    def get_definition(self):
-        if self.is_primitive():
-            raise ValueError(
-                'Sentence.get_definition: requires non-primitive Sentence.')
-        return self._definition
-
-
-Sentence.ChildTypes = (Sentence, Token)
 
 
 class UnfinishedSentencesError(Exception):
@@ -155,15 +68,7 @@ class Parser:
         return self.parse_expression(scope)
 
     def parse_sentence(self, scope):
-        # Try: do the split expression/signature here, and also handle the
-        # start of the sentence.
-        start = next(self._token_stream)
-        # Check Start
-        node = Sentence([start])
-        if some_condition:
-            return self.parse_expression(scope, node)
-        else:
-            return self.parse_signature(scope, node)
+        return self.parse_expression(scope)
 
     def parse_expression(self, scope):
         """Parse an expression.
@@ -180,6 +85,9 @@ class Parser:
         elif not isinstance(token, FirstToken):
             raise ParseError(
                 'Cannot begin a sentence with "' + str(token) + '"')
+        elif 'Define' == token.text:
+            self._token_stream.push_back()
+            return self.parse_definition(scope)
         node = Sentence([token])
         part_match = scope.new_matcher()
         for token in self._token_stream:
@@ -248,9 +156,8 @@ class Parser:
              definition = Definition.from_sentence(base_sentence, None)
              inner_scope.add_definition(definition)
         add_def(signature)
-        for el in signature:
-            if isinstance(el, Sentence):
-                add_def(el)
+        for sub in signature.iter_sub():
+            add_def(el)
         return inner_scope
 
     def parse_definition(self, outer_scope):
@@ -265,22 +172,28 @@ class Parser:
         if 'Define' != token.text:
             raise ParseError('Invalid start of Definition: ' + str(token))
         node = Sentence(token)
-        sig = self.parse_signature(outer_scope)
-        node.append(sig)
-        for word in ['to', 'be']:
-            token = next(self._token_stream)
-            if token.text != word:
-                raise ParseError('Did not find ' + word + ' in definition.')
-            node.append(token)
-        inner_scope = self.make_inner_scope(outer_scope, signature)
-        node.append(self.parse_expression(inner_scope))
-        if self._token_stream.not_empty():
-            token = next(self._token_stream)
-            if isinstance(token, PeriodToken):
-                node.append(token)
+        ptr = outer_scope.new_matcher()
+        inner_scope = None
+        # TODO: Addet the pointer matching to this.
+        for item in self._token_stream:
+            if isinstance(item, FirstToken) and inner_scope is None:
+                self._token_stream.push_back(item)
+                signature = self.parse_signature()
+                node.append(signature)
+                inner_scope = self.make_inner_scope(outer_scope, signature)
+            elif isinstance(item, FirstToken):
+                self._token_stream.push_back(item)
+                node.append(self.parse_expression(inner_scope))
+            elif isinstance(item, WordToken):
+                node.append(item)
+            elif isinstance(item, PeriodToken):
+                node.append(item)
+                break
+            elif isinstance(item, ValueToken):
+                node.append(Sentence(item))
             else:
-                self._token_stream.push_back(token)
-        return node
+                raise TypeError('Parser.parse_definition: Unexpected type' +
+                                type(item))
 
 
 class TokenStream:
