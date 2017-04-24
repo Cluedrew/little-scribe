@@ -83,6 +83,7 @@ class Scope:
         else:
             self._definitions.append(definition)
             self._add_to_tree(definition)
+            definition._scope = self
 
     def merge(self, other):
         """Merge another Scope into this one."""
@@ -186,19 +187,30 @@ class Definition:
     def __init__(self, pattern, code, type=None):
         self.pattern = pattern
         self.code = code
+        self.type = type
+        self._scope = None
 
     @staticmethod
     def from_sentence(sentence, code):
         """Short cut, create a definition pattern from a sentence.
 
         The pattern uses all SUBSENTENCE values and strips the dot."""
+        if sentence.is_primitive():
+            raise ValueError('Definition.from_sentence: '
+                'May not define primitive sentence.')
         pattern = []
-        for el in sentence:
-            if isinstance(el, PeriodToken):
+        for (pos, item) in enumerate(sentence):
+            if isinstance(item, PeriodToken):
+                if pos < len(sentence) - 1:
+                    raise ValueError('Definition.from_sentence: '
+                        'Sentence with embedded period.')
                 return Definition(pattern, code)
-            elif isinstance(el, Token):
-                pattern.append(el)
-            elif isinstance(el, Sentence):
+            elif isinstance(item, FirstToken) and 0 != pos:
+                raise ValueError('Definition.from_sentence: '
+                    'Sentence with embedded first word.')
+            elif isinstance(item, Token):
+                pattern.append(item)
+            elif isinstance(item, Sentence):
                 pattern.append(SUBSENTENCE)
         raise ValueError('Definition.from_sentence: Sentence untermainated.')
 
@@ -233,6 +245,9 @@ class Definition:
 
     def is_conflict(self, other):
         return DEF_DIFF_CONFLICT is self.diff(other)
+
+    def enclosing_scope(self):
+        return self._scope
 
 
 SUBSENTENCE = 'subsentence'

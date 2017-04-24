@@ -12,6 +12,10 @@ immutablity. (Scratch that, does not allow for parameters.)"""
 # create a working version and refine it later. Or at least have a base.
 
 from itertools import count
+from scope import (
+    Definition,
+    Scope,
+    )
 
 
 class FunctionCode:
@@ -80,6 +84,7 @@ class FunctionUserDefined:
 def define_function(scope, head, body):
     """Create a new function Definition. Define Head. to be Body. .
 
+    :param scope: The enclosing scope around the definition.
     :param head: The Sentence that defines the function signature.
     :param body: The Sentence that defines the function body."""
     # Creating the pattern that defines the function signature.
@@ -112,6 +117,29 @@ def define_function(scope, head, body):
     code = sentence_to_function_application(local_scope)
     # ? code = FunctionApplication.from_sentence(scope, sentence)
     return Definition(pattern, code)
+
+
+# Maybe replacement.
+def define_function_2(scope, head, body):
+    """Create a new function Definition. 'Define Head. to be Body. .'
+
+    :param scope: The enclosing scope around the definition.
+    :param head: The Sentence that defines the function signature.
+    :param body: The Sentence that defines the function body."""
+    params = []
+    for el in head:
+        if isinstance(el, Sentence):
+            params.append(el)
+
+    def eval_function(args):
+        local_scope = Scope(scope)
+        for (param, arg) in zip(params, args):
+            new_def = Definition.from_sentence(param, arg)
+            local_scope.add_definition(new_def)
+        return evalutate(body, local_scope)
+
+    return eval_function
+
 
 def sentence_to_function_application(scope, sentence):
     """Convert a Sentence to a FunctionApplication with the scope."""

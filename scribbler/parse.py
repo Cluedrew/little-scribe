@@ -30,10 +30,8 @@ class Sentence:
         :param init: Either None, a Token, or an interable of ChildTypes."""
         # Interal data array.
         self._children = []
-        if isinstance(init, Token):
+        if isinstance(init, Sentence.ChildTypes):
             self._children.append(init)
-        elif init is None:
-            pass
         elif hasattr(init, '__iter__'):
             for child in init:
                 if not isinstance(child, Sentence.ChildTypes):
@@ -93,6 +91,7 @@ class Sentence:
             raise ValueError(
                 'Sentence.get_definition: requires non-primitive Sentence.')
         return self._definition
+
 
 Sentence.ChildTypes = (Sentence, Token)
 
