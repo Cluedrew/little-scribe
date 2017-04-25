@@ -216,6 +216,10 @@ class Definition:
 
 
 class MatchPointer:
+    """Helper to match a Sentence within a scope."""
+    # It might be worth compressing this to next and end.
+    # Maybe everything returns instead of using NoDefinitionError.
+    # Also, I need a list of nodes, for nested scopes.
 
     def __init__(self, scope):
         self.cur_node = scope._root
@@ -243,10 +247,19 @@ class MatchPointer:
         else:
             raise NoDefinitionError('No possible matches.')
 
-    def next(self, element):
+    def next(self, element=Sentence()):
+        """Match a bit more of the Sentence."""
         if isinstance(element, Token):
             self.next_token(element)
-        elif isinstance(element, Sentence) or element is None:
+        elif isinstance(element, Sentence):
             self.next_sub()
         else:
             raise TypeError('MatchPointer.next: element has invalid type.')
+
+    def try_next(self, element=Sentence()):
+        """Try to match more of the Sentence, return success."""
+        try:
+            self.next(element)
+            return True
+        except NoDefinitionError:
+            return False

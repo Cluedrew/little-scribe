@@ -93,27 +93,22 @@ class Parser:
         for token in self._token_stream:
             if isinstance(token, FirstToken):
                 self._token_stream.push_back(token)
-                sub = part_match.sub_type()
-                if sub is SUBSENTENCE:
+                if part_match.try_next():
                     node.append(self.parse_expression(scope))
-                    part_match.next_sub()
-                elif sub is SUBSIGNATURE:
-                    node.append(self.parse_signature(scope))
-                    part_match.next_sub()
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(token, WordToken):
                 if part_match.next(token):
                     node.append(token)
-                # TODO It might be simpler if we follow the iterator instead.
                 elif (isinstance(node[-1], Sentence) and
-                      node[-1].ends_with_dot() and
                       part_match.has_end()):
+                    self._token_stream.push_back(token)
                     return node
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(token, PeriodToken):
-                if part_match.end():
+                if part_match.has_end():
+                    node.append(token)
                     return node
                 else:
                     raise ParseError('Sentence not matched.')
@@ -121,6 +116,7 @@ class Parser:
                 node.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
+        raise Exception('Parser.parse_expression: fell out of the loop.')
 
     def parse_signature(self):
         """Take a stream of tokens and create a Signature.
@@ -148,6 +144,7 @@ class Parser:
                 node.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
+        raise Exception('Parser.parse_signature: fell out of the loop.')
 
     @staticmethod
     def make_inner_scope(outer_scope, signature):
@@ -174,26 +171,42 @@ class Parser:
         node = Sentence(token)
         ptr = outer_scope.new_matcher()
         inner_scope = None
-        # TODO: Addet the pointer matching to this.
         for item in self._token_stream:
-            if isinstance(item, FirstToken) and inner_scope is None:
+            if isinstance(item, FirstToken):
                 self._token_stream.push_back(item)
-                signature = self.parse_signature()
-                node.append(signature)
-                inner_scope = self.make_inner_scope(outer_scope, signature)
-            elif isinstance(item, FirstToken):
-                self._token_stream.push_back(item)
-                node.append(self.parse_expression(inner_scope))
+                if ptr.try_next():
+                    if inner_scope is None:
+                        signature = self.parse_signature()
+                        node.append(signature)
+                        inner_scope = self.make_inner_scope(
+                            outer_scope, signature)
+                    else:
+                        node.append(self.parse_expression(inner_scope))
+                else:
+                    raise ParseError('Sentence not matched.')
             elif isinstance(item, WordToken):
-                node.append(item)
+                if ptr.try_next(item):
+                    node.append(item)
+                elif (isinstance(node[-1], Sentence) and ptr.has_end()):
+                    self._token_stream.push_back(item)
+                    return node
+                else:
+                    raise ParseError('Sentence not matched.')
             elif isinstance(item, PeriodToken):
-                node.append(item)
-                break
+                if ptr.has_end():
+                    node.append(item)
+                    return node
+                else:
+                    raise ParseError('Sentence not matched.')
             elif isinstance(item, ValueToken):
-                node.append(Sentence(item))
+                if ptr.try_next():
+                    node.append(Sentence(item))
+                else:
+                    raise ParseError('Sentence not matched.')
             else:
                 raise TypeError('Parser.parse_definition: Unexpected type' +
-                                type(item))
+                                str(type(item)))
+        raise Exception('Parser.parse_definition: fell out of the loop.')
 
 
 class TokenStream:
