@@ -164,8 +164,8 @@ DEF_DIFF_UNIQUE = 'unique'
 class Definition:
     """A Definition in Little Scribe, a name bound to a value.
 
-    :ivar pattern: A sequence that repersents the series of tokens used when
-        parsing to match this definition.
+    :ivar name: A Sentence to match against, it is what the definition
+        is for and is matched against.
     :ivar code: Object used to evaluate the function from its arguments.
 
     This should be expanded in later versions. But I think this is the

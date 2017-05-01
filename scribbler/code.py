@@ -18,6 +18,12 @@ from scope import (
     )
 
 
+class Action:
+
+    def do(scope):
+        raise NotImplementedError('Base Action is not to be used.')
+
+
 def evaluate(sentence, scope):
     """Evaluate a Sentence within a Scope."""
     if sentence.is_primitive():
@@ -47,40 +53,31 @@ def define_function(scope, head, body):
     for item in head.iter_sub():
         params.append(item)
 
-    def eval_function(args):
+    def eval_function(scope, *args):
         local_scope = Scope(scope)
         for (param, arg) in zip(params, args):
-            new_def = Definition.from_sentence(param, arg)
+            new_def = Definition(param, arg)
             local_scope.add_definition(new_def)
+        # Head must be defined to this for recursion.
         return evalutate(body, local_scope)
 
-    return eval_function
+    return AddDefAction(Definition(head, eval_function))
 
 
-define_definition = Definition(
-    string_to_signature('Define Head. to be Body. .'), define_function)
+class AddDefAction(Action):
 
+    def __init__(self, definition):
+        self.definition = definition
 
-def sentence_to_function_application(scope, sentence):
-    """Convert a Sentence to a FunctionApplication with the scope."""
-    if 1 == len(sentence) and isinstance(sentence[0], ValueToken):
-        return ValueNode(sentence[0])
-    args = []
-    # Note, this has already been matched so it should always match.
-    match = scope.new_matcher()
-    for el in sentence:
-        if isinstance(el, sentence):
-            args.append(sentence_to_function_application(scope, el))
-            match.next_sub()
-        else:
-            match.next(el)
-    return FunctionApplication(match.end(), args)
+    def do(scope):
+        scope.add_definition(self.definition)
 
 
 def create_built_in_scope():
     """Returns a scope with all the built-in functions defined."""
     scope = Scope()
-    scope.add_definition(define_definition)
+    scope.add_definition(Definition(
+        string_to_signature('Define Head. to be Body. .'), define_function))
     scope.add_definition(Definition(
         string_to_signature('Add Left hand side. to Right hand side. .'),
         lambda left, right: left + right))

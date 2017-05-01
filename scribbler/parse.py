@@ -20,18 +20,6 @@ from tokenization import (
     )
 
 
-class UnfinishedSentencesError(Exception):
-
-    def __init__(self, count):
-        self.count = count
-
-    def inc(self):
-        self.count += 1
-
-    def __repr__(self):
-        return 'UnfinshedSentencesError({})'.format(self.count)
-
-
 class ParseError(Exception):
     """Base Exception for the parse modual."""
 
@@ -100,8 +88,7 @@ class Parser:
             elif isinstance(token, WordToken):
                 if part_match.next(token):
                     node.append(token)
-                elif (isinstance(node[-1], Sentence) and
-                      part_match.has_end()):
+                elif node.ends_with_dot() and part_match.has_end():
                     self._token_stream.push_back(token)
                     return node
                 else:
@@ -116,7 +103,9 @@ class Parser:
                 node.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
-        raise Exception('Parser.parse_expression: fell out of the loop.')
+        if isinstance(node[-1], Sentence) and part_match.has_end():
+            return node
+        raise ParseError('Sentence not matched.')
 
     def parse_signature(self):
         """Take a stream of tokens and create a Signature.
@@ -187,7 +176,7 @@ class Parser:
             elif isinstance(item, WordToken):
                 if ptr.try_next(item):
                     node.append(item)
-                elif (isinstance(node[-1], Sentence) and ptr.has_end()):
+                elif node.ends_with_dot() and ptr.has_end():
                     self._token_stream.push_back(item)
                     return node
                 else:
@@ -206,7 +195,9 @@ class Parser:
             else:
                 raise TypeError('Parser.parse_definition: Unexpected type' +
                                 str(type(item)))
-        raise Exception('Parser.parse_definition: fell out of the loop.')
+        if node.ends_with_dot() and ptr.has_end():
+            return node
+        raise ParseError('Sentence not matched.')
 
 
 class TokenStream:

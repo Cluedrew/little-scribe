@@ -70,11 +70,9 @@ class Sentence:
                 child.write(to, prefix + '  ')
 
     def ends_with_dot(self):
-        if isinstance(self._children[-1], PeriodToken):
-            return True
-        if isinstance(self._children[-1], Sentence):
-            return self._children[-1].ends_with_dot()
-        return False
+        last = self._children[-1]
+        return isinstance(last, PeriodToken) or
+            (isinstance(last, Sentence) and last.ends_with_dot())
 
     def is_primitive(self):
         return (1 == len(self._children) and
