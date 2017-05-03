@@ -68,6 +68,17 @@ class FirstToken(Token):
         return 'FirstToken({!r})'.format(self.text)
 
 
+class DefineToken(FirstToken):
+
+    regex = re.compile('Define')
+
+    def __init__(self, text='Define'):
+        super(DefineToken, self).__init__(text)
+
+    def __repr__(self):
+        return 'DefineToken()'
+
+
 class WordToken(Token):
     """A Token that makes up the middle of a Sentence."""
 

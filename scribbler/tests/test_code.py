@@ -7,6 +7,12 @@ from code import (
     define_function,
     )
 from parse import (
+    string_to_signature,
+    )
+from scope import (
+    Scope,
+    )
+from sentence import (
     Sentence,
     )
 from tokenization import (
@@ -18,8 +24,11 @@ from unittest import TestCase
 
 class TestDefineFunction(TestCase):
 
-    pass
-    #def test_(self)
+    def test_define_identity(self):
+        action = define_function(Scope(),
+            string_to_signature('Identity Id. .'),
+            string_to_signature('Id.'))
+        self.assertIsNone(action.definition.code(Scope(), None))
 
 
 class TestCreateBuiltInScope(TestCase):
@@ -28,8 +37,8 @@ class TestCreateBuiltInScope(TestCase):
         scope = create_built_in_scope()
         ptr = scope.new_matcher()
         ptr.next(FirstToken('Define'))
-        ptr.next(None)
+        ptr.next()
         ptr.next(WordToken('to'))
         ptr.next(WordToken('be'))
-        ptr.next(None)
+        ptr.next()
         self.assertTrue(ptr.has_end())

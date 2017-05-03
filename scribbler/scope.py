@@ -254,7 +254,8 @@ class MatchPointer:
         elif isinstance(element, Sentence):
             self.next_sub()
         else:
-            raise TypeError('MatchPointer.next: element has invalid type.')
+            raise TypeError('MatchPointer.next: element has invalid type: ' +
+                str(type(element)))
 
     def try_next(self, element=Sentence()):
         """Try to match more of the Sentence, return success."""

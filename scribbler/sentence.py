@@ -2,6 +2,7 @@
 
 
 from tokenization import (
+    PeriodToken,
     Token,
     )
 import sys
@@ -71,8 +72,8 @@ class Sentence:
 
     def ends_with_dot(self):
         last = self._children[-1]
-        return isinstance(last, PeriodToken) or
-            (isinstance(last, Sentence) and last.ends_with_dot())
+        return (isinstance(last, PeriodToken) or
+            (isinstance(last, Sentence) and last.ends_with_dot()))
 
     def is_primitive(self):
         return (1 == len(self._children) and

@@ -18,6 +18,11 @@ from scope import (
     )
 
 
+class LSRunningError(Exception):
+    """Exception type for errors thrown by."""
+    # In the future should be replaced by or hiddened behind a Little Scribe
+    # error message.
+
 class Action:
 
     def do(scope):
@@ -28,19 +33,22 @@ def evaluate(sentence, scope):
     """Evaluate a Sentence within a Scope."""
     if sentence.is_primitive():
         return sentence.get_value()
-    func = scope.match_sentence(sentence)
+    match = scope.match_sentence(sentence)
     params = []
     # Define disables pre-evaluation.
     if sentence[0].text == 'Define':
         for item in sentence.iter_sub():
             params.append(item)
-        return func(scope, *params)
+        return match.code(scope, *params)
     # All other functions take the results of their arguments,
     # not the arguments themselves.
     else:
         for item in sentence.iter_sub():
             params.append(evaluate(item, scope))
-        return func(*params)
+        # If there are no arguments, don't evaluate.
+        if 0 == len(params):
+            return match.code
+        return match.code(scope, *params)
 
 
 def define_function(scope, head, body):
@@ -54,12 +62,15 @@ def define_function(scope, head, body):
         params.append(item)
 
     def eval_function(scope, *args):
+        if len(args) != len(params):
+            raise LSRunningError('Incorrect number of arguments. expected: ' +
+                str(len(params)) + ' actual: ' + str(len(args)))
         local_scope = Scope(scope)
         for (param, arg) in zip(params, args):
             new_def = Definition(param, arg)
             local_scope.add_definition(new_def)
-        # Head must be defined to this for recursion.
-        return evalutate(body, local_scope)
+        # Head should be defined in the parent scope.
+        return evaluate(body, local_scope)
 
     return AddDefAction(Definition(head, eval_function))
 
