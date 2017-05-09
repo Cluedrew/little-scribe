@@ -140,6 +140,41 @@ class Scope:
             for (token, node) in self.tokens:
                 node.print_tree(level + 1, token, file=file)
 
+    class Matcher:
+        """Goes through a scopes tri looking for a match."""
+
+        def __init__(self, scope):
+            self._nodes = [scope._root]
+
+        def next(self, element=Sentence()):
+            """If element does continue the match, advance.
+
+            :return: True if Matcher advanced, false otherwise."""
+            new_nodes = []
+            if isinstance(element, Sentence):
+                for node in self._nodes:
+                    if node.sub_node:
+                        new_nodes.append(node.sub_node)
+            elif isinstance(element, Token):
+                for node in self._nodes:
+                    for (token, sub_node) in node.tokens:
+                        if element == token:
+                            new_nodes.append(sub_node)
+                            break
+            else:
+                raise TypeError('Scope.Match.next: element unknown type.')
+            if len(new_nodes):
+                self._nodes = new_nodes
+                return True
+            return False
+
+        def end(self):
+            """Check for an end here."""
+            for node in self._nodes:
+                if node.definition:
+                    return node.definition
+            return None
+
     def print_definitions(self, file=sys.stdout):
         """Print out the Definition.patterns in the Scope."""
         for define in self._definitions:
