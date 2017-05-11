@@ -143,8 +143,8 @@ class Scope:
     class Matcher:
         """Goes through a scopes tri looking for a match."""
 
-        def __init__(self, scope):
-            self._nodes = [scope._root]
+        def __init__(self, scope_list):
+            self._nodes = [scope._root for scope in scope_list]
 
         def next(self, element=Sentence()):
             """If element does continue the match, advance.
@@ -169,7 +169,9 @@ class Scope:
             return False
 
         def end(self):
-            """Check for an end here."""
+            """Check if a match ends here.
+
+            :return: Matched Definition if there is one, otherwise None."""
             for node in self._nodes:
                 if node.definition:
                     return node.definition

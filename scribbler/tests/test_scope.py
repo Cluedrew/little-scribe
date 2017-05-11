@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+from contextlib import contextmanager
 from unittest import TestCase
 
 from parse import (
     Sentence,
+    string_to_signature,
     )
 from scope import (
     Definition,
@@ -12,6 +14,7 @@ from scope import (
 from tokenization import (
     FirstToken,
     PeriodToken,
+    tokenify,
     WordToken,
     )
 
@@ -33,3 +36,40 @@ class TestScope(TestCase):
         #scope.print_definitions()
         #scope.print_tree()
         self.assertIs(test_def, scope.match_sentence(to_match))
+
+
+def make_test_scopes():
+    scope0 = Scope(None)
+    scope0.add_definition(Definition(
+        string_to_signature('Fake sentence for testing.'), 0))
+    scope0.add_definition(Definition(
+        string_to_signature('Beginning Middle. end.'), 1))
+    return [scope0]
+
+
+class TestScopeMatcher(TestCase):
+
+#   I recall a way to use context manager in a way it adds to the arguments.
+#    @make_test_scopes()
+    def test_matcher_match_simple(self):
+        scope = make_test_scopes()[0]
+        # Switch once new_matcher is good.
+        matcher = Scope.Matcher([scope])
+        self.assertTrue(matcher.next(tokenify('Fake')))
+        self.assertTrue(matcher.next(tokenify('sentence')))
+        self.assertIsNone(matcher.end())
+        self.assertTrue(matcher.next(tokenify('for')))
+        self.assertTrue(matcher.next(tokenify('testing')))
+        self.assertIsInstance(matcher.end(), Definition)
+        self.assertEqual(matcher.end().code, 0)
+        self.assertFalse(matcher.next(tokenify('.')))
+
+    def test_matcher_match_nested(self):
+        scope = make_test_scopes()[0]
+        # Switch once new_matcher is good.
+        matcher = Scope.Matcher([scope])
+        self.assertTrue(matcher.next(tokenify('Beginning')))
+        self.assertFalse(matcher.next(tokenify('Middle')))
+        self.assertTrue(matcher.next())
+        self.assertTrue(matcher.next(tokenify('end')))
+        self.assertIsInstance(matcher.end(), Definition)
