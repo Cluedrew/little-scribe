@@ -81,7 +81,7 @@ class Parser:
         for token in self._token_stream:
             if isinstance(token, FirstToken):
                 self._token_stream.push_back(token)
-                if part_match.try_next():
+                if part_match.next():
                     node.append(self.parse_expression(scope))
                 else:
                     raise ParseError('Sentence not matched.')
@@ -139,8 +139,8 @@ class Parser:
     def make_inner_scope(outer_scope, signature):
         inner_scope = Scope(outer_scope)
         def add_def(base_sentence):
-             definition = Definition.from_sentence(base_sentence, None)
-             inner_scope.add_definition(definition)
+            definition = Definition.from_sentence(base_sentence, None)
+            inner_scope.add_definition(definition)
         add_def(signature)
         for sub in signature.iter_sub():
             add_def(el)
@@ -163,7 +163,7 @@ class Parser:
         for item in self._token_stream:
             if isinstance(item, FirstToken):
                 self._token_stream.push_back(item)
-                if ptr.try_next():
+                if ptr.next():
                     if inner_scope is None:
                         signature = self.parse_signature()
                         node.append(signature)
@@ -174,7 +174,7 @@ class Parser:
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(item, WordToken):
-                if ptr.try_next(item):
+                if ptr.next(item):
                     node.append(item)
                 elif node.ends_with_dot() and ptr.has_end():
                     self._token_stream.push_back(item)
@@ -188,7 +188,7 @@ class Parser:
                 else:
                     raise ParseError('Sentence not matched.')
             elif isinstance(item, ValueToken):
-                if ptr.try_next():
+                if ptr.next():
                     node.append(Sentence(item))
                 else:
                     raise ParseError('Sentence not matched.')

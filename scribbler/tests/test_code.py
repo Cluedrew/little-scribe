@@ -10,6 +10,7 @@ from parse import (
     string_to_signature,
     )
 from scope import (
+    Definition,
     Scope,
     )
 from sentence import (
@@ -42,3 +43,7 @@ class TestCreateBuiltInScope(TestCase):
         ptr.next(WordToken('be'))
         ptr.next()
         self.assertTrue(ptr.has_end())
+
+        self.assertIsInstance(scope.match_sentence(
+            string_to_signature('Define Abc. to be Xyz. .')),
+            Definition)

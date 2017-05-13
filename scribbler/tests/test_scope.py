@@ -49,27 +49,26 @@ def make_test_scopes():
 
 class TestScopeMatcher(TestCase):
 
-#   I recall a way to use context manager in a way it adds to the arguments.
-#    @make_test_scopes()
     def test_matcher_match_simple(self):
-        scope = make_test_scopes()[0]
-        # Switch once new_matcher is good.
-        matcher = Scope.Matcher([scope])
+        matcher = make_test_scopes()[0].new_matcher()
         self.assertTrue(matcher.next(tokenify('Fake')))
         self.assertTrue(matcher.next(tokenify('sentence')))
-        self.assertIsNone(matcher.end())
+        self.assertIsNone(matcher.has_end())
         self.assertTrue(matcher.next(tokenify('for')))
         self.assertTrue(matcher.next(tokenify('testing')))
-        self.assertIsInstance(matcher.end(), Definition)
-        self.assertEqual(matcher.end().code, 0)
+        self.assertIsInstance(matcher.has_end(), Definition)
+        self.assertEqual(matcher.has_end().code, 0)
         self.assertFalse(matcher.next(tokenify('.')))
 
     def test_matcher_match_nested(self):
-        scope = make_test_scopes()[0]
-        # Switch once new_matcher is good.
-        matcher = Scope.Matcher([scope])
+        matcher = make_test_scopes()[0].new_matcher()
         self.assertTrue(matcher.next(tokenify('Beginning')))
         self.assertFalse(matcher.next(tokenify('Middle')))
         self.assertTrue(matcher.next())
         self.assertTrue(matcher.next(tokenify('end')))
-        self.assertIsInstance(matcher.end(), Definition)
+        self.assertIsInstance(matcher.has_end(), Definition)
+
+    def test_matcher_no_match_sentence(self):
+        matcher = make_test_scopes()[0].new_matcher()
+        self.assertTrue(matcher.next(tokenify('Fake')))
+        self.assertFalse(matcher.next())

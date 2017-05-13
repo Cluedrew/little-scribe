@@ -43,7 +43,15 @@ class Scope:
 
     def new_matcher(self):
         """Return an object that can be used to match definitions."""
-        return MatchPointer(self)
+        return Scope.Matcher(self._build_scope_list())
+
+    def _build_scope_list(self):
+        """Return a list of all scopes visible in this scope."""
+        scope_list = []
+        if self._parent:
+            scope_list = self._parent._build_scope_list()
+        scope_list.append(self)
+        return scope_list
 
     def _iter_definitions(self):
         for definition in self._definitions:
@@ -114,9 +122,9 @@ class Scope:
                 elif isinstance(el, Token):
                     ptr.next(el)
                 else:
-                    ptr.next_sub()
+                    ptr.next()
             if ptr.has_end():
-                return ptr.end()
+                return ptr.has_end()
         except NoDefinitionError:
             raise
         raise NoDefinitionError('Sentence has no match in scope.')
@@ -141,7 +149,7 @@ class Scope:
                 node.print_tree(level + 1, token, file=file)
 
     class Matcher:
-        """Goes through a scopes tri looking for a match."""
+        """Goes through a scope's tri looking for a match."""
 
         def __init__(self, scope_list):
             self._nodes = [scope._root for scope in scope_list]
@@ -162,16 +170,17 @@ class Scope:
                             new_nodes.append(sub_node)
                             break
             else:
-                raise TypeError('Scope.Match.next: element unknown type.')
+                raise TypeError('Scope.Matcher.next: element unknown type.')
             if len(new_nodes):
                 self._nodes = new_nodes
                 return True
             return False
 
-        def end(self):
+        def has_end(self):
             """Check if a match ends here.
 
-            :return: Matched Definition if there is one, otherwise None."""
+            :return: Matched Definition if there is one, otherwise None.
+            Definitions are always true, so this is also a predicate."""
             for node in self._nodes:
                 if node.definition:
                     return node.definition
@@ -250,54 +259,3 @@ class Definition:
 
     def is_conflict(self, other):
         return DEF_DIFF_CONFLICT is self.diff(other)
-
-
-class MatchPointer:
-    """Helper to match a Sentence within a scope."""
-    # It might be worth compressing this to next and end.
-    # Maybe everything returns instead of using NoDefinitionError.
-    # Also, I need a list of nodes, for nested scopes.
-
-    def __init__(self, scope):
-        self.cur_node = scope._root
-
-    def end(self):
-        definition = self.cur_node.definition
-        if definition is None:
-            raise NoDefinitionError('Is not a match.')
-        return definition
-
-    def has_end(self):
-        return self.cur_node.definition is not None
-
-    def next_token(self, token):
-        for (t, node) in self.cur_node.tokens:
-            if t == token:
-                self.cur_node = node
-                return
-        else:
-            raise NoDefinitionError('No possible matches.')
-
-    def next_sub(self):
-        if self.cur_node is not None:
-            self.cur_node = self.cur_node.sub_node
-        else:
-            raise NoDefinitionError('No possible matches.')
-
-    def next(self, element=Sentence()):
-        """Match a bit more of the Sentence."""
-        if isinstance(element, Token):
-            self.next_token(element)
-        elif isinstance(element, Sentence):
-            self.next_sub()
-        else:
-            raise TypeError('MatchPointer.next: element has invalid type: ' +
-                str(type(element)))
-
-    def try_next(self, element=Sentence()):
-        """Try to match more of the Sentence, return success."""
-        try:
-            self.next(element)
-            return True
-        except NoDefinitionError:
-            return False
