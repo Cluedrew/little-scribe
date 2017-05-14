@@ -44,7 +44,7 @@ def make_test_scopes():
         string_to_signature('Fake sentence for testing.'), 0))
     scope0.add_definition(Definition(
         string_to_signature('Beginning Middle. end.'), 1))
-    return [scope0]
+    return [scope0, Scope(scope0)]
 
 
 class TestScopeMatcher(TestCase):
@@ -72,3 +72,16 @@ class TestScopeMatcher(TestCase):
         matcher = make_test_scopes()[0].new_matcher()
         self.assertTrue(matcher.next(tokenify('Fake')))
         self.assertFalse(matcher.next())
+
+    def test_matcher_parent(self):
+        matcher = make_test_scopes()[1].new_matcher()
+        self.assertTrue(matcher.next(tokenify('Beginning')))
+        self.assertTrue(matcher.next())
+        self.assertTrue(matcher.next(tokenify('end')))
+        self.assertTrue(matcher.has_end())
+
+    def test_matcher_stable_no_next(self):
+        matcher = make_test_scopes()[0].new_matcher()
+        self.assertTrue(matcher.next(tokenify('Fake')))
+        self.assertFalse(matcher.next(tokenify('token')))
+        self.assertTrue(matcher.next(tokenify('sentence')))

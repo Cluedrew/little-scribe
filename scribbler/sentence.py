@@ -4,6 +4,7 @@
 from tokenization import (
     PeriodToken,
     Token,
+    ValueToken,
     )
 import sys
 
@@ -50,6 +51,37 @@ class Sentence:
     def __ne__(self, other):
         return not self == other
 
+    # Two different ways to handle the seperators.
+    def __str__(self):
+        data = ''
+        for word in self._children:
+            if isinstance(word, Token):
+                seg = str(word)
+            else:
+                # Recurse?
+                seg = '(SUB)'
+            if '' == data:
+                data = seg
+            else:
+                data = data + ' ' + seg
+        return data
+
+    def __repr__(self):
+        text = 'Sentence(['
+        iterator = iter(self._children)
+        item = next(iterator, None)
+        while item:
+            if isinstance(item, Token):
+                text = text + repr(item)
+            else:
+                # Recurse?
+                text = text + 'Sentence()'
+            item = next(iterator, None)
+            if item is None:
+                break
+            text = text + ', '
+        return text + '])'
+
     def append(self, child):
         """Add a new Token to the end of the Sentence."""
         if isinstance(child, Sentence.ChildTypes):
@@ -77,7 +109,7 @@ class Sentence:
 
     def is_primitive(self):
         return (1 == len(self._children) and
-            isinstance(self._children, ValueToken))
+            isinstance(self._children[0], ValueToken))
 
     def get_value(self):
         if not self.is_primitive():

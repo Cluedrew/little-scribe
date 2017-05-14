@@ -15,24 +15,16 @@ from parse import (
     TokenStream,
     )
 from scope import (
+    Definition,
     Scope,
     )
 from tokenization import (
     FirstToken,
     PeriodToken,
     Token,
+    tokenify_list,
     WordToken,
     )
-
-
-class TestSentence(TestCase):
-
-    def test_equal_operator(self):
-        left = Sentence([FirstToken('Height'), WordToken('of'),
-                         WordToken('box'), PeriodToken()])
-        right = Sentence([FirstToken('Height'), WordToken('of'),
-                          WordToken('box'), PeriodToken()])
-        self.assertTrue(left == right)
 
 
 class FakeStream:
@@ -79,6 +71,39 @@ class TestParser(TestCase):
         self.assertEqual(sig._children[0].text, 'Define')
         self.assertIsInstance(sig._children[5], PeriodToken)
         self.assertEqual(sig._children[1]._children[0].text, 'New')
+
+    def make_test_scope(self):
+        scope = Scope()
+        scope.add_definition(Definition(string_to_signature('Unit.'), 0))
+        scope.add_definition(Definition(
+            string_to_signature('Something with Sub sentence. to parse.'), 1))
+        scope.add_definition(Definition(
+            string_to_signature('Define New thing. to be a new type.'), 2))
+        return scope
+
+    def test_parse_expression(self):
+        scope = self.make_test_scope()
+        parser = fake_parser(tokenify_list(['Something', 'with', 'Unit', '.',
+            'to', 'parse', '.']))
+        exp = parser.parse_expression(scope)
+        self.assertEqual(exp,
+            string_to_signature('Something with Unit. to parse.'))
+
+    def test_parse_expression_dispatch_to_definition(self):
+        scope = self.make_test_scope()
+        parser = fake_parser(tokenify_list(['Define', 'Sig', 'sentence', '.',
+            'to', 'be', 'a', 'new', 'type', '.']))
+        with patch.object(parser, 'parse_definition') as mock_parse_def:
+             parser.parse_expression(scope)
+        mock_parse_def.assert_called_once_with(scope)
+
+    def test_parse_definition(self):
+        scope = self.make_test_scope()
+        parser = fake_parser(tokenify_list(['Define', 'Sig', 'sentence', '.',
+            'to', 'be', 'a', 'new', 'type', '.']))
+        dfn = parser.parse_definition(scope)
+        self.assertEqual(dfn,
+            string_to_signature('Define Sig sentence. to be a new type.'))
 
 
 class TestTokenStream(TestCase):

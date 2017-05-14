@@ -25,7 +25,7 @@ class LSRunningError(Exception):
 
 class Action:
 
-    def do(scope):
+    def do(self, scope):
         raise NotImplementedError('Base Action is not to be used.')
 
 
@@ -80,7 +80,7 @@ class AddDefAction(Action):
     def __init__(self, definition):
         self.definition = definition
 
-    def do(scope):
+    def do(self, scope):
         scope.add_definition(self.definition)
 
 

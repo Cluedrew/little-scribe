@@ -5,6 +5,7 @@ import sys
 
 
 from scope import (
+    Definition,
     Scope,
     )
 from sentence import (
@@ -68,23 +69,28 @@ class Parser:
         :param scope: The scope the expression is being parsed within.
         :return: A Sentence."""
         token = next(self._token_stream)
+        if isinstance(token, str):
+            raise Exception('String instead of Token')
         if isinstance(token, ValueToken):
             return Sentence([token])
         elif not isinstance(token, FirstToken):
             raise ParseError(
-                'Cannot begin a sentence with "' + str(token) + '"')
+                'Cannot begin a sentence with \"' + repr(token) + '\"')
         elif 'Define' == token.text:
-            self._token_stream.push_back()
+            self._token_stream.push_back(token)
             return self.parse_definition(scope)
         node = Sentence([token])
         part_match = scope.new_matcher()
+        if not part_match.next(token):
+            self._token_stream.push_back(token)
+            raise ParseError('Sentence not matched.', node)
         for token in self._token_stream:
             if isinstance(token, FirstToken):
                 self._token_stream.push_back(token)
                 if part_match.next():
                     node.append(self.parse_expression(scope))
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             elif isinstance(token, WordToken):
                 if part_match.next(token):
                     node.append(token)
@@ -92,20 +98,20 @@ class Parser:
                     self._token_stream.push_back(token)
                     return node
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             elif isinstance(token, PeriodToken):
                 if part_match.has_end():
                     node.append(token)
                     return node
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             elif isinstance(token, ValueToken):
                 node.append(Sentence([token]))
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
         if isinstance(node[-1], Sentence) and part_match.has_end():
             return node
-        raise ParseError('Sentence not matched.')
+        raise ParseError('Sentence not matched.', node)
 
     def parse_signature(self):
         """Take a stream of tokens and create a Signature.
@@ -139,7 +145,7 @@ class Parser:
     def make_inner_scope(outer_scope, signature):
         inner_scope = Scope(outer_scope)
         def add_def(base_sentence):
-            definition = Definition.from_sentence(base_sentence, None)
+            definition = Definition(base_sentence, None)
             inner_scope.add_definition(definition)
         add_def(signature)
         for sub in signature.iter_sub():
@@ -159,6 +165,9 @@ class Parser:
             raise ParseError('Invalid start of Definition: ' + str(token))
         node = Sentence(token)
         ptr = outer_scope.new_matcher()
+        if not ptr.next(token):
+            self._token_stream.push_back(item)
+            raise ParseError('Sentence not matched.', node)
         inner_scope = None
         for item in self._token_stream:
             if isinstance(item, FirstToken):
@@ -171,8 +180,11 @@ class Parser:
                             outer_scope, signature)
                     else:
                         node.append(self.parse_expression(inner_scope))
+                elif node.ends_with_dot() and ptr.has_end():
+                    self._token_stream.push_back(item)
+                    return node
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             elif isinstance(item, WordToken):
                 if ptr.next(item):
                     node.append(item)
@@ -180,24 +192,24 @@ class Parser:
                     self._token_stream.push_back(item)
                     return node
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             elif isinstance(item, PeriodToken):
                 if ptr.has_end():
                     node.append(item)
                     return node
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             elif isinstance(item, ValueToken):
                 if ptr.next():
                     node.append(Sentence(item))
                 else:
-                    raise ParseError('Sentence not matched.')
+                    raise ParseError('Sentence not matched.', node)
             else:
                 raise TypeError('Parser.parse_definition: Unexpected type' +
                                 str(type(item)))
         if node.ends_with_dot() and ptr.has_end():
             return node
-        raise ParseError('Sentence not matched.')
+        raise ParseError('Sentence not matched.', node)
 
 
 class TokenStream:

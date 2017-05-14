@@ -127,26 +127,27 @@ class Scope:
                 return ptr.has_end()
         except NoDefinitionError:
             raise
-        raise NoDefinitionError('Sentence has no match in scope.')
+        raise NoDefinitionError('Sentence has no match in scope: \'' +
+            str(sentence) + "'")
 
     class _Node:
         """Internal class used in constructing a tri, to store definions."""
 
         def __init__(self):
-            self.sub_type = None
             self.sub_node = None
             self.tokens = []
             self.definition = None
 
-        def print_tree(self, level=0, link=None, file=sys.stdout):
+        def print_tree(self, level=None, link=None, file=sys.stdout):
+            next_level = (0 if level is None else level + 1)
             if link is not None:
                 print((' ' * level) + str(link) +
                       (' <def>' if self.definition is not None else ''),
                       file=file)
-            if self.sub_type is not None:
-                self.sub_node.print_tree(level + 1, self.sub_type, file=file)
+            if self.sub_node is not None:
+                self.sub_node.print_tree(next_level, '(SUB)', file=file)
             for (token, node) in self.tokens:
-                node.print_tree(level + 1, token, file=file)
+                node.print_tree(next_level, token, file=file)
 
     class Matcher:
         """Goes through a scope's tri looking for a match."""
@@ -186,10 +187,10 @@ class Scope:
                     return node.definition
             return None
 
-    def print_definitions(self, file=sys.stdout):
-        """Print out the Definition.patterns in the Scope."""
+    def print_list(self, file=sys.stdout):
+        """Print out the list of Definitions in the Scope."""
         for define in self._definitions:
-            print(str(define.pattern), file=file)
+            print(define.name, file=file)
 
     def print_tree(self, file=sys.stdout):
         """Print out the tree of _Nodes in the tree."""

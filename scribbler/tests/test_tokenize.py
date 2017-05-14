@@ -5,10 +5,12 @@ import tempfile
 from unittest import TestCase
 
 from tokenization import (
+    DefineToken,
     file_token_stream,
     FirstToken,
     text_token_stream,
     make_token,
+    NumberToken,
     PeriodToken,
     Token,
     WordToken,
@@ -45,6 +47,22 @@ class TestMakeToken(TestCase):
         self.assertIsInstance(token, FirstToken)
         self.assertEqual('Hello', token.text)
         self.assertEqual(' world ', string)
+
+
+class TestToken(TestCase):
+
+    def test_token_repr(self):
+        self.assertEqual("PeriodToken()", repr(PeriodToken()))
+        self.assertEqual("FirstToken('First')", repr(FirstToken('First')))
+        self.assertEqual("WordToken('second')", repr(WordToken('second')))
+        self.assertEqual("DefineToken()", repr(DefineToken('Define')))
+        self.assertEqual("NumberToken('101')", repr(NumberToken('101')))
+
+    def test_token_check(self):
+        with self.assertRaises(ValueError):
+            FirstToken('following')
+        with self.assertRaises(ValueError):
+            NumberToken('101\n')
 
 
 class TestSimpleStreams(TestCase):
