@@ -89,6 +89,8 @@ class Parser:
                 self._token_stream.push_back(token)
                 if part_match.next():
                     node.append(self.parse_expression(scope))
+                elif node.ends_with_dot() and part_match.has_end():
+                    return node
                 else:
                     raise ParseError('Sentence not matched.', node)
             elif isinstance(token, WordToken):
@@ -98,6 +100,9 @@ class Parser:
                     self._token_stream.push_back(token)
                     return node
                 else:
+                    print()
+                    print(token)
+                    part_match._nodes[0].print_tree()
                     raise ParseError('Sentence not matched.', node)
             elif isinstance(token, PeriodToken):
                 if part_match.has_end():
@@ -106,7 +111,10 @@ class Parser:
                 else:
                     raise ParseError('Sentence not matched.', node)
             elif isinstance(token, ValueToken):
-                node.append(Sentence([token]))
+                if part_match.next():
+                    node.append(Sentence([token]))
+                else:
+                    raise ParseError('Sentence not matched.', node)
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
         if isinstance(node[-1], Sentence) and part_match.has_end():
@@ -149,7 +157,7 @@ class Parser:
             inner_scope.add_definition(definition)
         add_def(signature)
         for sub in signature.iter_sub():
-            add_def(el)
+            add_def(sub)
         return inner_scope
 
     def parse_definition(self, outer_scope):
@@ -181,7 +189,6 @@ class Parser:
                     else:
                         node.append(self.parse_expression(inner_scope))
                 elif node.ends_with_dot() and ptr.has_end():
-                    self._token_stream.push_back(item)
                     return node
                 else:
                     raise ParseError('Sentence not matched.', node)

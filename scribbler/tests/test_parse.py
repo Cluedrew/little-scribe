@@ -105,6 +105,15 @@ class TestParser(TestCase):
         self.assertEqual(dfn,
             string_to_signature('Define Sig sentence. to be a new type.'))
 
+    def test_parse_expression_with_value(self):
+        scope = self.make_test_scope()
+        parser = fake_parser(tokenify_list(['Something', 'with', '5', 'to',
+            'parse', '.']))
+        exp = parser.parse_expression(scope)
+        # Warning! This check will fail if values are taken out of signatures.
+        self.assertEqual(exp,
+            string_to_signature('Something with 5 to parse.'))
+
 
 class TestTokenStream(TestCase):
 

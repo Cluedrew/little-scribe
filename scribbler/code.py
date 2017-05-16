@@ -48,6 +48,7 @@ def evaluate(sentence, scope):
         # If there are no arguments, don't evaluate.
         if 0 == len(params):
             return match.code
+        # TODO: The scope might be unneeded in this case, figure that out.
         return match.code(scope, *params)
 
 
@@ -60,6 +61,9 @@ def define_function(scope, head, body):
     params = []
     for item in head.iter_sub():
         params.append(item)
+
+    if 0 == len(params):
+        return AddDefAction(Definition(head, body))
 
     def eval_function(scope, *args):
         if len(args) != len(params):
@@ -91,8 +95,8 @@ def create_built_in_scope():
         string_to_signature('Define Head. to be Body. .'), define_function))
     scope.add_definition(Definition(
         string_to_signature('Add Left hand side. to Right hand side. .'),
-        lambda left, right: left + right))
+        lambda scope, left, right: left + right))
     scope.add_definition(Definition(
         string_to_signature('Minus Left hand side. by Right hand side. .'),
-        lambda left, right: left - right))
+        lambda scope, left, right: left - right))
     return scope

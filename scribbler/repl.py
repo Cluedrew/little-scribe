@@ -4,6 +4,10 @@
 This is still a sketch, I have very little idea of what I'm doing."""
 
 
+from contextlib import (
+    contextmanager,
+    )
+
 from code import (
     Action,
     create_built_in_scope,
@@ -17,10 +21,6 @@ from scope import (
     )
 from tokenization import (
     file_token_stream,
-    )
-
-from contextlib import (
-    contextmanager,
     )
 
 

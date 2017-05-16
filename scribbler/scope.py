@@ -141,8 +141,8 @@ class Scope:
         def print_tree(self, level=None, link=None, file=sys.stdout):
             next_level = (0 if level is None else level + 1)
             if link is not None:
-                print((' ' * level) + str(link) +
-                      (' <def>' if self.definition is not None else ''),
+                cargo = ("" if self.definition is None else ' <def>')
+                print((' ' * level) + str(link) + cargo,
                       file=file)
             if self.sub_node is not None:
                 self.sub_node.print_tree(next_level, '(SUB)', file=file)
