@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 
+import sys
+
 from tokenization import (
     PeriodToken,
     Token,
     ValueToken,
     )
-import sys
 
 
 class Sentence:

@@ -33,31 +33,26 @@ class SentenceUnfinisedError(ParseError):
     """A Sentence was not finished."""
 
 
+# TODO: This class is so light it might just be worth using parse_* functions.
+# self._token_stream -> token_stream
 class Parser:
     """This class repersents a parser."""
 
     def __init__(self, token_stream):
         self._token_stream = TokenStream(token_stream)
 
-    def parse_page(self):
-        """Parse a page of Little Scribe code."""
-        scope = Scope()
-        while self._token_stream.not_empty():
-            paragraph = self.parse_paragraph(scope)
-
-    def iter_paragraph(self, scope):
-        while self._token_stream.not_empty():
-            yield self.parse_paragraph(scope)
-
     def parse_paragraph(self, scope):
         """Parse a paragraph. It is just a wrapper for now.
 
         :param scope: The scope the paragraph is being parsed within.
+             Must define new_matcher and make_define_scope.
         :return: A Sentence"""
         return self.parse_expression(scope)
 
-    def parse_sentence(self, scope):
-        return self.parse_expression(scope)
+    def iter_paragraph(self, scope):
+        """Parse a series of paragraph, each one in a page."""
+        while self._token_stream.not_empty():
+            yield self.parse_paragraph(scope)
 
     def parse_expression(self, scope):
         """Parse an expression.
@@ -69,8 +64,6 @@ class Parser:
         :param scope: The scope the expression is being parsed within.
         :return: A Sentence."""
         token = next(self._token_stream)
-        if isinstance(token, str):
-            raise Exception('String instead of Token')
         if isinstance(token, ValueToken):
             return Sentence([token])
         elif not isinstance(token, FirstToken):
@@ -100,9 +93,6 @@ class Parser:
                     self._token_stream.push_back(token)
                     return node
                 else:
-                    print()
-                    print(token)
-                    part_match._nodes[0].print_tree()
                     raise ParseError('Sentence not matched.', node)
             elif isinstance(token, PeriodToken):
                 if part_match.has_end():
@@ -149,17 +139,6 @@ class Parser:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
         raise Exception('Parser.parse_signature: fell out of the loop.')
 
-    @staticmethod
-    def make_inner_scope(outer_scope, signature):
-        inner_scope = Scope(outer_scope)
-        def add_def(base_sentence):
-            definition = Definition(base_sentence, None)
-            inner_scope.add_definition(definition)
-        add_def(signature)
-        for sub in signature.iter_sub():
-            add_def(sub)
-        return inner_scope
-
     def parse_definition(self, outer_scope):
         """Parse a definition from the incomming tokens.
 
@@ -184,8 +163,7 @@ class Parser:
                     if inner_scope is None:
                         signature = self.parse_signature()
                         node.append(signature)
-                        inner_scope = self.make_inner_scope(
-                            outer_scope, signature)
+                        inner_scope = outer_scope.new_define_scope(signature)
                     else:
                         node.append(self.parse_expression(inner_scope))
                 elif node.ends_with_dot() and ptr.has_end():
@@ -225,35 +203,34 @@ class TokenStream:
         """Create the TokenStream by wrapping around an iterator.
 
         :param iter: An iterator that returns Tokens."""
-        self.iter = iter
-        self.head = None
+        self._iter = iter
+        self._head = None
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.head is None:
-            return next(self.iter)
-        next_token = self.head
-        self.head = None
+        if self._head is None:
+            return next(self._iter)
+        next_token = self._head
+        self._head = None
         return next_token
 
     def is_empty(self):
-        if self.head is not None:
+        if self._head is not None:
             return False
-        self.head = next(self.iter, None)
-        return self.head is None
+        self._head = next(self._iter, None)
+        return self._head is None
 
     def not_empty(self):
         return not self.is_empty()
 
     def push_back(self, token):
-        if self.head is not None:
+        if self._head is not None:
             raise ValueError('TokenStream.push_back: Already has head.')
-        self.head = token
+        self._head = token
 
 
 def string_to_signature(text):
     """Convert a string into a signature."""
-    parser = Parser(text_token_stream(text))
-    return parser.parse_signature()
+    return Parser(text_token_stream(text)).parse_signature()

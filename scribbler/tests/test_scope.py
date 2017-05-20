@@ -9,6 +9,7 @@ from parse import (
     )
 from scope import (
     Definition,
+    NoDefinitionError,
     Scope,
     )
 from tokenization import (
@@ -33,9 +34,21 @@ class TestScope(TestCase):
         test_def = Definition(pattern, code)
         scope = Scope(None)
         scope.add_definition(test_def)
-        #scope.print_definitions()
-        #scope.print_tree()
         self.assertIs(test_def, scope.match_sentence(to_match))
+
+    def test_new_define_scope(self):
+        outer_scope = Scope()
+        outer_scope.add_definition(Definition(
+            string_to_signature('Define Head. to be a built in.'), None))
+        inner_scope = outer_scope.new_define_scope(string_to_signature(
+            'Check that The Sentences. given. are Defined. .'))
+        # raises on missing sentence.
+        inner_scope.match_sentence(string_to_signature(
+            'Check that Things. are Something. .'))
+        inner_scope.match_sentence(string_to_signature('The Things. given.'))
+        inner_scope.match_sentence(string_to_signature('Defined.'))
+        with self.assertRaises(NoDefinitionError):
+            inner_scope.match_sentence(string_to_signature('Sentences.'))
 
 
 def make_test_scopes():

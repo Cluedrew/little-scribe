@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
-"""Repersenting the internal code.
+"""Repersenting the internal code of Little Scribe and runtime tools.
 
-I'm still not sure what this should look like. I'm still figuring it out.
-
-What I need is a way to convert the parse tree into code. The words used to
-create the nodes don't actually matter at this point. (Maybe debugging?)
-Anyways, I think that these should be enough, until we start adding
-immutablity. (Scratch that, does not allow for parameters.)"""
-
+Built-ins are created simply by adding a Definition to the a scope. Use
+`create_built_in_scope` to get an instance of this scope."""
 
 from parse import (
     string_to_signature,
@@ -45,6 +40,7 @@ def evaluate(sentence, scope):
     else:
         for item in sentence.iter_sub():
             params.append(evaluate(item, scope))
+        # TODO: I need a better divide than this.
         # If there are no arguments, don't evaluate.
         if 0 == len(params):
             return match.code
@@ -52,6 +48,7 @@ def evaluate(sentence, scope):
         return match.code(scope, *params)
 
 
+# TODO: currently actually the general define for both values and functions.
 def define_function(scope, head, body):
     """Create a new function Definition. 'Define Head. to be Body. .'
 
@@ -79,6 +76,22 @@ def define_function(scope, head, body):
     return AddDefAction(Definition(head, eval_function))
 
 
+def define_constant(scope, head, body):
+    """Define a new immutable value.
+
+    Currently values may not have fields."""
+    for _ in head.iter_sub():
+        raise Exception('define_constant: Does not accept fields.')
+    return AddDefAction(Definition(head, evaluate(body, scope)))
+
+
+def define__unspecified(scope, head, body):
+    """Define something based on the contents of head."""
+    for _ in head.iter_sub():
+        return define_function(scope, head, body)
+    return define_constant(scope, head, body)
+
+
 class AddDefAction(Action):
 
     def __init__(self, definition):
@@ -91,6 +104,10 @@ class AddDefAction(Action):
 def create_built_in_scope():
     """Returns a scope with all the built-in functions defined."""
     scope = Scope()
+
+    def add_text_definition(text, code, type=None):
+        scope.add_definition(Definition(string_to_signature(text), code, type))
+
     scope.add_definition(Definition(
         string_to_signature('Define Head. to be Body. .'), define_function))
     scope.add_definition(Definition(

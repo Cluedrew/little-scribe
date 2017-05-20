@@ -6,7 +6,9 @@ both classes."""
 
 
 import enum
+import itertools
 import sys
+
 # Would be circlular:
 #from parse import (
 #    string_to_signature,
@@ -115,20 +117,24 @@ class Scope:
     def match_sentence(self, sentence):
         """Get the definition that matches the Sentence."""
         ptr = self.new_matcher()
-        try:
-            for el in sentence:
-                if isinstance(el, PeriodToken):
-                    break
-                elif isinstance(el, Token):
-                    ptr.next(el)
-                else:
-                    ptr.next()
-            if ptr.has_end():
-                return ptr.has_end()
-        except NoDefinitionError:
-            raise
+        for item in sentence:
+            if isinstance(item, PeriodToken):
+                break
+            elif isinstance(item, Token):
+                ptr.next(item)
+            else:
+                ptr.next()
+        if ptr.has_end():
+            return ptr.has_end()
         raise NoDefinitionError('Sentence has no match in scope: \'' +
             str(sentence) + "'")
+
+    def new_define_scope(self, signature):
+        """Make a subscope as required by the Define keyword."""
+        inner_scope = Scope(self)
+        for sentence in itertools.chain([signature], signature.iter_sub()):
+            inner_scope.add_definition(Definition(sentence, None))
+        return inner_scope
 
     class _Node:
         """Internal class used in constructing a tri, to store definions."""
@@ -142,8 +148,7 @@ class Scope:
             next_level = (0 if level is None else level + 1)
             if link is not None:
                 cargo = ("" if self.definition is None else ' <def>')
-                print((' ' * level) + str(link) + cargo,
-                      file=file)
+                print((' ' * level) + str(link) + cargo, file=file)
             if self.sub_node is not None:
                 self.sub_node.print_tree(next_level, '(SUB)', file=file)
             for (token, node) in self.tokens:

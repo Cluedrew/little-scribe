@@ -46,13 +46,15 @@ def fake_parser(tokens):
 
 class TestParser(TestCase):
 
-    def test_parse_page(self):
+    def test_iter_paragraph(self):
+        scope = Scope()
         with patch('parse.Parser.parse_paragraph', side_effect=[1, 2, 3],
                 autospec=True) as paragraph_mock:
             with patch('parse.TokenStream.not_empty', autospec=True,
                     side_effect=[True, True, False]) as not_empty_mock:
                 parser = fake_parser(['One', 'two'])
-                parser.parse_page()
+                for paragraph in parser.iter_paragraph(scope):
+                    pass
         self.assertEqual(2, paragraph_mock.call_count)
         self.assertEqual(3, not_empty_mock.call_count)
 
@@ -89,6 +91,15 @@ class TestParser(TestCase):
         self.assertEqual(exp,
             string_to_signature('Something with Unit. to parse.'))
 
+    def test_parse_expression_with_value(self):
+        scope = self.make_test_scope()
+        parser = fake_parser(tokenify_list(['Something', 'with', '5', 'to',
+            'parse', '.']))
+        exp = parser.parse_expression(scope)
+        # Warning! This check will fail if values are taken out of signatures.
+        self.assertEqual(exp,
+            string_to_signature('Something with 5 to parse.'))
+
     def test_parse_expression_dispatch_to_definition(self):
         scope = self.make_test_scope()
         parser = fake_parser(tokenify_list(['Define', 'Sig', 'sentence', '.',
@@ -104,15 +115,6 @@ class TestParser(TestCase):
         dfn = parser.parse_definition(scope)
         self.assertEqual(dfn,
             string_to_signature('Define Sig sentence. to be a new type.'))
-
-    def test_parse_expression_with_value(self):
-        scope = self.make_test_scope()
-        parser = fake_parser(tokenify_list(['Something', 'with', '5', 'to',
-            'parse', '.']))
-        exp = parser.parse_expression(scope)
-        # Warning! This check will fail if values are taken out of signatures.
-        self.assertEqual(exp,
-            string_to_signature('Something with 5 to parse.'))
 
 
 class TestTokenStream(TestCase):
