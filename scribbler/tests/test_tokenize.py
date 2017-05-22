@@ -10,7 +10,7 @@ from tokenization import (
     FirstToken,
     text_token_stream,
     make_token,
-    NumberToken,
+    IntegerToken,
     PeriodToken,
     Token,
     WordToken,
@@ -56,13 +56,13 @@ class TestToken(TestCase):
         self.assertEqual("FirstToken('First')", repr(FirstToken('First')))
         self.assertEqual("WordToken('second')", repr(WordToken('second')))
         self.assertEqual("DefineToken()", repr(DefineToken('Define')))
-        self.assertEqual("NumberToken('101')", repr(NumberToken('101')))
+        self.assertEqual("IntegerToken('101')", repr(IntegerToken('101')))
 
     def test_token_check(self):
         with self.assertRaises(ValueError):
             FirstToken('following')
         with self.assertRaises(ValueError):
-            NumberToken('101\n')
+            IntegerToken('101\n')
 
 
 class TestSimpleStreams(TestCase):

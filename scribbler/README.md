@@ -91,10 +91,6 @@ I may use an 'Action' type to implement definitions, which are just values
 of a type that the environment executes instead of printing. They have access
 to the enclosing scope for this, so they can add definitions.
 
-I am dropping binding of definitions to sentences, I've taken out some of it
-all ready. The binding would be great for efficiency but requires some over
-head that is just not need now. We will look up a sentence when we need it.
-
 ##### Parsing Patterns
 There are two parse modes:
 + **signature**, or pattern mode: Used to read in pattern and create new
@@ -118,3 +114,22 @@ context-free.) Because of the LISP problem, where functions will end with
 blocks like `)))]))]))` because the deep nesting suddenly ends. With this
 rule `.........` becomes `.`. Also I have found it to actually be pretty
 intuitive in my test writes.
+
+
+Problem:
+The language does not have a call syntax. I didn't notice right away because
+you fill in parameters (a way to not fill in parameters is planned) but that
+is dependant on having parameters. Hence there is no way to seperate a zero-
+argument function from a value.
+
+Context works well enough in many situations. If the value would not be used
+anyways, don't evaluate the function producing it. Which only becomes an issue
+with functions as values. If you want to pass in a zero argument function, how
+do you keep it from being called?
+Solutions:
+1.  Go pure functional: the distiction no longer needs to be made. This will
+    probably be my temparary solution.
+2.  Force Arguments: If you want a zero argument function, you have to add in
+    an unused argument to pass it when you want to call it.
+3.  Wrapper: A special language context forces one behaviour, while the other
+    is default.

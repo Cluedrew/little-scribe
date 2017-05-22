@@ -98,16 +98,16 @@ class ValueToken(Token):
         raise NotImplementedError()
 
 
-class NumberToken(ValueToken):
+class IntegerToken(ValueToken):
     """A value Token repersenting an Integer value."""
 
     regex = re.compile('[{0.digits}]+'.format(string))
 
     def __init__(self, text):
-        super(NumberToken, self).__init__(text)
+        super(IntegerToken, self).__init__(text)
 
     def __repr__(self):
-        return 'NumberToken({!r})'.format(self.text)
+        return 'IntegerToken({!r})'.format(self.text)
 
     def get_value(self):
         return int(self.text)
@@ -116,7 +116,7 @@ class NumberToken(ValueToken):
 WHITESPACE_EXP = re.compile('[{0.whitespace}]+'.format(string))
 
 # A set of Token child types.
-token_types = {WordToken, FirstToken, PeriodToken, NumberToken}
+token_types = {WordToken, FirstToken, PeriodToken, IntegerToken}
 
 
 def make_token(source_string):
