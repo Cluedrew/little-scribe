@@ -44,7 +44,7 @@ def evaluate(sentence, scope):
         # If there are no arguments, don't evaluate.
         if 0 == len(params):
             return match.code
-        # TODO: The scope might be unneeded in this case, figure that out.
+        # Pass in the scope for user defined functions.
         return match.code(scope, *params)
 
 

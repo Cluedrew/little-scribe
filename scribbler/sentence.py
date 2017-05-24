@@ -22,7 +22,6 @@ class Sentence:
         """Create a new Sentence structure.
 
         :param init: Either None, a Token, or an interable of ChildTypes."""
-        # Interal data array.
         self._children = []
         if isinstance(init, Sentence.ChildTypes):
             self._children.append(init)

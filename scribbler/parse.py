@@ -4,10 +4,6 @@
 import sys
 
 
-from scope import (
-    Definition,
-    Scope,
-    )
 from sentence import (
     Sentence,
     )
@@ -33,10 +29,10 @@ class SentenceUnfinisedError(ParseError):
     """A Sentence was not finished."""
 
 
-# TODO: This class is so light it might just be worth using parse_* functions.
-# self._token_stream -> token_stream
 class Parser:
-    """This class repersents a parser."""
+    """This class repersents a parser.
+
+    :ivar _token_stream: TokenStream containing all unused tokens."""
 
     def __init__(self, token_stream):
         self._token_stream = TokenStream(token_stream)
@@ -132,12 +128,12 @@ class Parser:
             elif isinstance(token, PeriodToken):
                 node.append(token)
                 return node
-            # TODO Should this be legal?
             elif isinstance(token, ValueToken):
-                node.append(Sentence([token]))
+                raise ParseError('Parser.parse_signature: ValueToken not '
+                                 'allowed in signature.')
             else:
                 raise ValueError('Unknown Token Kind: {}'.format(type(token)))
-        raise Exception('Parser.parse_signature: fell out of the loop.')
+        raise ParseError('Parser.parse_signature: fell out of the loop.')
 
     def parse_definition(self, outer_scope):
         """Parse a definition from the incomming tokens.
@@ -149,7 +145,7 @@ class Parser:
         'Define Function or variable name. to be Body. .'"""
         token = next(self._token_stream)
         if 'Define' != token.text:
-            raise ParseError('Invalid start of Definition: ' + str(token))
+            raise ParseError('Invalid start of definition: ' + str(token))
         node = Sentence(token)
         ptr = outer_scope.new_matcher()
         if not ptr.next(token):
@@ -229,6 +225,12 @@ class TokenStream:
         if self._head is not None:
             raise ValueError('TokenStream.push_back: Already has head.')
         self._head = token
+
+
+def generate_paragraphs(base_stream, scope):
+    """Iterate over paragraphs in the base_stream."""
+    for paragraph in Parser(base_stream).iter_paragraphs(scope):
+        yield paragraph
 
 
 def string_to_signature(text):

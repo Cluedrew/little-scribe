@@ -93,12 +93,11 @@ class TestParser(TestCase):
 
     def test_parse_expression_with_value(self):
         scope = self.make_test_scope()
-        parser = fake_parser(tokenify_list(['Something', 'with', '5', 'to',
-            'parse', '.']))
+        tokens = tokenify_list(['Something', 'with', '5', 'to', 'parse', '.'])
+        parser = fake_parser(tokens)
         exp = parser.parse_expression(scope)
-        # Warning! This check will fail if values are taken out of signatures.
         self.assertEqual(exp,
-            string_to_signature('Something with 5 to parse.'))
+            Sentence(tokens[0:2] + [Sentence(tokens[2])] + tokens[3:]))
 
     def test_parse_expression_dispatch_to_definition(self):
         scope = self.make_test_scope()

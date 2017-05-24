@@ -146,6 +146,13 @@ def text_token_stream(base_text):
             yield token
 
 
+def open_token_stream(file_like):
+    """Read from an already open stream."""
+    for line in file_like.readlines():
+        for token in text_token_stream(line):
+            yield token
+
+
 def file_token_stream(file_name):
     """Convert a text file into a stream of tokens."""
     with open(file_name) as file:
