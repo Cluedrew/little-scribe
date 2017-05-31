@@ -91,6 +91,19 @@ class WordToken(Token):
         return 'WordToken({!r})'.format(self.text)
 
 
+class OperToken(Token):
+    """An operator token used to form operator sentences."""
+
+    # List of operator characters not final.
+    regex = re.compile('[-+=^!@#$%&*]+')
+
+    def __init__(self, text):
+        super(OperToken, self).__init__(text)
+
+    def __repr__(self):
+        return 'OperToken({!r})'.format(self.text)
+
+
 class ValueToken(Token):
     """A value Token is a hard coded value, is an entire sentence."""
 

@@ -20,7 +20,7 @@ this sentense make up (almost) every language feature.
 +   First Word: The first word in a sentence, as a regular word except the
     first letter is a capital, not lowercase.
 +   Period: The token that ends a sentence.
-+   Number: A token made up of digits, repersenting an integer value.
++   Integer: A token made up of digits, repersenting an integer value.
 
 ##### Levels:
 Most sentences can occur anywhere, but not all, so we have a few levels where
@@ -67,6 +67,27 @@ return the value of that parameter.
 
 The only exception is the function definition sentence itself, which does not
 evaluate its subsentences.
+
+##### Grammar (Draft)
+
+There is no true grammar for Little Scribe, sentences usually must match the
+avaible definitions, which means that the grammar changes a new definition
+is made.
+
+Sentences:
+Paragraph: Top level definition, it is always an expression.
+
+Expression: The standard sentence, made up of words. Begins with a first word,
+then a series of words or nested sentences and finally a period. The period is
+optional if the last element is a subsentence that ends with a period
+(recursively), continuing the expression does not allow for a
+
+Operator: An operator is made up of a series of operator symbols and nested
+sentences.
+
+Signature: Signatures are similar to the above rules except that every
+sentence must end in exactly 1 period. Operators in signatures must
+occur at the top level.
 
 ## Future ##
 
