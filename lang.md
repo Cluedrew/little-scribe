@@ -14,13 +14,57 @@ entire language is then built from nesting and listing sentences. Because of
 this sentense make up (almost) every language feature.
 
 ##### Tokens:
+Here is a list of all tokens used in Little Scribe. All whitespace, until
+strings are introduced, is the same as a single space. It must be included
+between tokens that could otherwise be the same token.
+
 +   Word: Made up of a string of characters. As Little Scribe is written, by
     default, in English the Latin alphabet is used. All characters are lower
     case
 +   First Word: The first word in a sentence, as a regular word except the
     first letter is a capital, not lowercase.
-+   Period: The token that ends a sentence.
-+   Integer: A token made up of digits, repersenting an integer value.
+    *   Define: A reserved word, sentences that beging with "Define" follow
+    different rules. These rules allow for definitions.
++   Period: The token that ends a sentence. It consists of exactly one period.
++   Operator: Used in operator sentences.
++   Value: Value tokens repersent
+    *   Integer: A token made up of digits, repersenting an integer value.
+
+##### Grammar
+
+There is no true grammar for Little Scribe, sentences usually must match the
+avaible definitions, which means that the grammar changes a new definition
+is made. However, there are certain rules by which sentences are defined.
+
+Sentences:
+Paragraph: Top level definition, it is always an expression.
+
+`Paragraph := Expression`
+
+Expression: The standard sentence, made up of words. Begins with a first word,
+then a series of words or nested sentences and finally a period. The period is
+optional if the last element is a subsentence that ends with a period
+(recursively), continuing the expression does not allow for a
+
+`Expression := FirstWord ( Sub | Word )* [ Period ]`
+
+Operator: An operator is made up of a series of operator symbols and nested
+sentences.
+
+`Operator := [ Sub ] ( Operator Sub )* [ Operator ]`
+
+Or: `Operator := [ Sub ] ( Operator+ Sub )* Operator*`
+
+Sub/Nested: `Nested := Expression | Operator`
+
+Signature: Signatures are similar to the above rules except that every
+sentence must end in exactly 1 period. Operators in signatures must
+occur at the top level.
+
+Value Primitives: Sentences that repersent a litteral value are made from a
+single value token, wrapping it but generally doing little else.
+
+`Primitive := Value`
 
 ##### Levels:
 Most sentences can occur anywhere, but not all, so we have a few levels where
@@ -67,27 +111,6 @@ return the value of that parameter.
 
 The only exception is the function definition sentence itself, which does not
 evaluate its subsentences.
-
-##### Grammar (Draft)
-
-There is no true grammar for Little Scribe, sentences usually must match the
-avaible definitions, which means that the grammar changes a new definition
-is made.
-
-Sentences:
-Paragraph: Top level definition, it is always an expression.
-
-Expression: The standard sentence, made up of words. Begins with a first word,
-then a series of words or nested sentences and finally a period. The period is
-optional if the last element is a subsentence that ends with a period
-(recursively), continuing the expression does not allow for a
-
-Operator: An operator is made up of a series of operator symbols and nested
-sentences.
-
-Signature: Signatures are similar to the above rules except that every
-sentence must end in exactly 1 period. Operators in signatures must
-occur at the top level.
 
 ## Future ##
 
