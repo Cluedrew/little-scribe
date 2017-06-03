@@ -44,27 +44,28 @@ Paragraph: Top level definition, it is always an expression.
 Expression: The standard sentence, made up of words. Begins with a first word,
 then a series of words or nested sentences and finally a period. The period is
 optional if the last element is a subsentence that ends with a period
-(recursively), continuing the expression does not allow for a
+(recursively), continuing the expression does not allow for another valid
+sentence.
 
-`Expression := FirstWord ( Sub | Word )* [ Period ]`
-
-Operator: An operator is made up of a series of operator symbols and nested
-sentences.
-
-`Operator := [ Sub ] ( Operator Sub )* [ Operator ]`
-
-Or: `Operator := [ Sub ] ( Operator+ Sub )* Operator*`
-
-Sub/Nested: `Nested := Expression | Operator`
+`Expression := FirstWord ( Nested | Word )* [ Period ]`
+`Expression := "Define" ( Word )* Signature ( Nested | Word )* [ Period ]`
 
 Signature: Signatures are similar to the above rules except that every
 sentence must end in exactly 1 period. Operators in signatures must
 occur at the top level.
 
-Value Primitives: Sentences that repersent a litteral value are made from a
+`Signature := FirstWord ( Signature | Word )* Period`
+
+Primitives: Sentences that repersent a litteral value are made from a
 single value token, wrapping it but generally doing little else.
 
 `Primitive := Value`
+
+Nested: When you nest subsentences, it usually can either be an Expression
+or a Primitive. Signatures can't be nested in the same way.
+
+`Nested := Expression | Primitive`
+
 
 ##### Levels:
 Most sentences can occur anywhere, but not all, so we have a few levels where
@@ -146,6 +147,9 @@ in some locations. It might be a new type of SubSentence: `SubBlock`
 
 Add support for lists of arguments. I'm thinking of using the comma for that.
 
-Add support for functions as arguments. The second level of parameters
-(the ones not supposed to be filled in at call time) is the only thing that
-should need any new syntax.
+Add support for functions as arguments. Some new syntax will be required to
+quote the function so it is evaluated at the call sight.
+
+Add a type system, even with dynamic types I need some way to check the
+types for checks with the base operations, and allowing the user to do the
+same would be nice.

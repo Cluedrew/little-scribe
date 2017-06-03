@@ -105,15 +105,12 @@ def create_built_in_scope():
     """Returns a scope with all the built-in functions defined."""
     scope = Scope()
 
-    def add_text_definition(text, code, type=None):
+    def add_text(text, code, type=None):
         scope.add_definition(Definition(string_to_signature(text), code, type))
 
-    scope.add_definition(Definition(
-        string_to_signature('Define Head. to be Body. .'), define_function))
-    scope.add_definition(Definition(
-        string_to_signature('Add Left hand side. to Right hand side. .'),
-        lambda scope, left, right: left + right))
-    scope.add_definition(Definition(
-        string_to_signature('Minus Left hand side. by Right hand side. .'),
-        lambda scope, left, right: left - right))
+    add_text('Define Head. to be Body. .', define_function)
+    add_text('Add Left hand side. to Right hand side. .',
+        lambda scope, left, right: left + right)
+    add_text('Minus Left hand side. by Right hand side. .',
+        lambda scope, left, right: left - right)
     return scope

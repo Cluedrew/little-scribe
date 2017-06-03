@@ -2,12 +2,36 @@
 """Defines type objects used in Little Scribe."""
 
 
+from abc import (
+    ABCMeta,
+    abstractmethod,
+    )
+
+
+class BaseType(metaclass=ABCMeta):
+    """The base type used to create other types."""
+
+    @staticmethod
+    @abstractmethod
+    def is_super_of(self, other):
+        """Checks to see if self repersents a non-strict super type of other."""
+        pass
+
+
 class AnythingType:
-    """Takes any type"""
+    """Takes any type."""
 
     def is_super_of(self, other):
         """Checks to see if self repersents a non-strict super type of other."""
         return True
+
+
+# Maybe, I might need this for the first field of Define sentences.
+class TextType:
+    """Unevaluated sentences."""
+
+    def is_super_of(self, other):
+        return isinstance(other, TextType)
 
 
 class FunctionType:
@@ -25,7 +49,7 @@ class FunctionType:
     def is_super_of(self, other):
         if not isinstance(other, FunctionType):
             return False
-        if not self.parameter_type == other.parameter_type:
+        if not self.parameter_count == other.parameter_count:
             return False
         if not self.return_type.is_super_of(other.return_type):
             return False
@@ -37,6 +61,15 @@ class NumberType:
     """Repersents a value that comes from a IntegerToken.
 
     Currently limited to non-negative integers, but that might change."""
+
+    def is_super_of(self, other):
+        return isinstance(other, (NumberType, IntegerType))
+
+
+class IntegerType:
+
+    def is_super_of(self, other):
+        return isinstance(other, IntegerType)
 
 
 # Planned, not immediate.
@@ -77,5 +110,11 @@ class ExpressionType:
                 self.result_type.is_super_of(other.result_type))
 
 
-#is_subtype(supertype, subtype) -> bool
-#common_parent(left_type, right_type) -> new parent
+def is_super(supertype, subtype):
+    """Check to see if the first argument is a super type of the second."""
+    return supertype.is_super_of(subtype)
+
+
+def common_parent(left_type, right_type):
+    """Find a common parent of the two provided types."""
+    return AnythingType()

@@ -9,10 +9,6 @@ import enum
 import itertools
 import sys
 
-# Would be circlular:
-#from parse import (
-#    string_to_signature,
-#    )
 from sentence import (
     Sentence,
     )
@@ -228,11 +224,6 @@ class Definition:
         self.name = name
         self.code = code
         self.type = type
-
-    #@staticmethod
-    #def from_text(text, code, type=None):
-    #    """Create the Definition name from text."""
-    #    return Definition(string_to_signature(text), code, type)
 
     @staticmethod
     def _diff_element(self_el, other_el):

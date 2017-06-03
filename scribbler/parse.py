@@ -111,44 +111,38 @@ class Parser:
     def parse_operator(self, scope):
         """Parse an operator from the stream and create an operator sentence.
 
-        Operators
+        This one does not enforce the shape of operator sentences. It is just
+        a bit too complex to do cleanly, so it happens on the define.
 
         :return: A Sentence, may be an operator sentence or might just be
             an expression."""
         token = next(self._token_stream)
-        last_is_oper = False
         node = Sentence()
         part_match = scope.new_matcher()
-        if isinstance(token, OperToken):
-            node.append(token)
-            last_is_oper = True
-        elif isinstance(token, FirstToken):
-            self._token_stream.push_back(token)
-            head = self.parse_expression(self, scope)
-            token = next(self._token_stream)
-            self._token_stream.push_back(token)
-            if not isinstance(token, OperToken):
-                return head
-            node.append(head)
-        else:
-            self._token_stream.push_back(token)
-            raise ParseError(
-                'Cannot begin an operator with \"' + repr(token) + '\"')
         for token in self._token_stream:
-            if !last_is_oper and isinstance(token, OperToken):
+            if isinstance(token, OperToken):
                 if part_match.next(token):
                     node.append(token)
-                    last_is_oper = True
+                elif part_match.end():
+                    self._token_stream.push_back(token)
+                    return node
                 else:
                     raise ParseError('Sentence not matched.', node)
-            elif last_is_oper and isinstance(token, FirstToken):
+            elif isinstance(token, FirstToken):
                 self._token_stream.push_back(token)
                 if part_match.next():
                     node.append(self.parse_expression(scope))
-                    last_is_oper = False
+                elif part_match.end():
+                    return node if 1 < len(node) else node[0]
                 else:
                     raise ParseError('Sentence not matched.', node)
             else:
+                self._token_stream.push_back(token)
+                if part_match.end():
+                    return node
+                else:
+                    raise ParseError('Sentence not matched.', node)
+        raise ParseError('Operator not closed')
 
     def parse_signature(self):
         """Take a stream of tokens and create a Signature.
