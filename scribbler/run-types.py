@@ -11,7 +11,6 @@ from abc import (
 class BaseType(metaclass=ABCMeta):
     """The base type used to create other types."""
 
-    @staticmethod
     @abstractmethod
     def is_super_of(self, other):
         """Checks to see if self repersents a non-strict super type of other."""
@@ -26,7 +25,7 @@ class AnythingType:
         return True
 
 
-# Maybe, I might need this for the first field of Define sentences.
+# Maybe: I might need this for the first field of Define sentences.
 class TextType:
     """Unevaluated sentences."""
 
@@ -91,13 +90,15 @@ class UnionType:
         self.unioned_types = unioned_types
 
     def is_super_of(self, other):
+        def any_option_super_of(single):
+            return any(self_option.is_super_of(single)
+                       for self_option in self.unioned_types)
+
         if isinstance(other, UnionType):
-            return all(any(self_option.is_super_of(other_option)
-                           for self_option in self.unioned_types)
+            return all(any_option_super_of(other_option)
                        for other_option in other.unioned_types)
         else:
-            return any(union_option.is_super_of(other)
-                       for union_option in self.unioned_types)
+            return any_option_super_of(other)
 
 
 class ExpressionType:

@@ -46,16 +46,14 @@ class Scope:
     def _build_scope_list(self):
         """Return a list of all scopes visible in this scope."""
         scope_list = []
-        if self._parent:
+        if self._parent is not None:
             scope_list = self._parent._build_scope_list()
         scope_list.append(self)
         return scope_list
 
     def _iter_definitions(self):
-        for definition in self._definitions:
-            yield definition
-        if self._parent is not None:
-            for definition in self._parent._iter_definitions():
+        for scope in self._build_scope_list():
+            for definition in scope._definitions:
                 yield definition
 
     def _add_to_tree(self, definition):
@@ -87,7 +85,7 @@ class Scope:
 
         It must not conflict with any existing definition in the scope."""
         for existing in self._iter_definitions():
-            if existing.is_conflict(definition):
+            if existing.is_matching(definition):
                 raise ValueError('New definition conflicts with existing '
                                  'definition in scope.')
         else:
@@ -254,5 +252,5 @@ class Definition:
     def is_unique(self, other):
         return DEF_DIFF_UNIQUE is self.diff(other)
 
-    def is_conflict(self, other):
-        return DEF_DIFF_CONFLICT is self.diff(other)
+    def is_typed(self):
+        return self.type is not None
