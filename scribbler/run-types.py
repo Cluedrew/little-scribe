@@ -111,6 +111,24 @@ class ExpressionType:
                 self.result_type.is_super_of(other.result_type))
 
 
+class StructureType:
+
+    def __init__(self, field_types):
+        self.field_types = field_types
+        #self.unique_id = new_id()
+
+    def is_super_of(self, other):
+        return self is other
+
+
+class GenericTypeClass:
+
+    def __init__(self):
+        # Generic over ... is ... .
+        # For all ... define ... .
+        # Function over ... taking ... to ... .
+
+
 def is_super(supertype, subtype):
     """Check to see if the first argument is a super type of the second."""
     return supertype.is_super_of(subtype)
@@ -119,3 +137,23 @@ def is_super(supertype, subtype):
 def common_parent(left_type, right_type):
     """Find a common parent of the two provided types."""
     return AnythingType()
+
+
+# I was going to have special things in the language for types, instead making
+# a type called Type and storing types in the global namespace. Then each type
+# is an instance that can be referenced, but has a single copy.
+# How does this work with type defintions. (... -> Type)
+
+# Type (type of types)
+# Anything - Number - Integer - Character - String
+# ex. ('Anything.', AnythingType(), type_type)
+def type_list():
+    lst = []
+    type_type = TypeType()
+    def append(name, code, type=type_type):
+        lst.append(Definition(string_to_signature(name), code, type))
+
+    append('Type.', type_type)
+    append('Anything.', AnythingType())
+    append('Number.', NumberType())
+    append('Integer.', IntegerType())
