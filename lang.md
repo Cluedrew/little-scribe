@@ -121,6 +121,15 @@ Of course the built in functions will have to be expained, we need a lot of
 base operations and so on. `Add Left hand side. to Right hand side. .`
 `If Condition. then Then block. else Else block. .`
 
+Add lists:
+There are just a couple things that I need variable amounts of the arguments.
+Rather than full varargs I think I might just use lists. They might latter
+become a more generic structure, but for now they are just special.
+`Put Head. onto Tail. .`
+`Empty list.`
+Later support might include the list arguments, so that they don't have to be
+constructed ahead of time.
+
 Add operators, which should work similarly to normal sentences.
 `Define operator ( Any. ) to be Any.`
 

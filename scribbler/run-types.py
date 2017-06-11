@@ -8,7 +8,7 @@ from abc import (
     )
 
 
-class BaseType(metaclass=ABCMeta):
+class LittleScribeType(metaclass=ABCMeta):
     """The base type used to create other types."""
 
     @abstractmethod
@@ -17,7 +17,13 @@ class BaseType(metaclass=ABCMeta):
         pass
 
 
-class AnythingType:
+class TypeType(LittleScribeType):
+
+    def is_super_of(self, other):
+        return isinstance(other, BaseType)
+
+
+class AnythingType(LittleScribeType):
     """Takes any type."""
 
     def is_super_of(self, other):
@@ -26,14 +32,14 @@ class AnythingType:
 
 
 # Maybe: I might need this for the first field of Define sentences.
-class TextType:
+class TextType(LittleScribeType):
     """Unevaluated sentences."""
 
     def is_super_of(self, other):
         return isinstance(other, TextType)
 
 
-class FunctionType:
+class FunctionType(LittleScribeType):
     """A callable type which runs code and returns a value.
 
     All functions are pure (having no side effects) and return exactly one
@@ -46,17 +52,41 @@ class FunctionType:
         self.return_type = return_type
 
     def is_super_of(self, other):
-        if not isinstance(other, FunctionType):
-            return False
-        if not self.parameter_count == other.parameter_count:
-            return False
-        if not self.return_type.is_super_of(other.return_type):
-            return False
-        return all(other_pt.is_super_of(self_pt) for (self_pt, other_pt) in
-                   zip(self.parameter_types, other.parameter_types))
+        return (isinstance(other, FunctionType) and
+                self.parameter_count == other.parameter_count and
+                self.return_type.is_super_of(other.return_type) and
+                all(other_pt.is_super_of(self_pt) for (self_pt, other_pt) in
+                    zip(self.parameter_types, other.parameter_types)))
+
+    @staticmethod
+    def make(parameter_types, return_type):
+        return FunctionType(parameter_types, return_type)
 
 
-class NumberType:
+class ListType(LittleScribeType):
+    """The basic sequence type."""
+
+    def __init__(self, element_type):
+        self.element_type = element_type
+
+    def is_super_of(self, other):
+        return (isinstance(other, EmptyType) or
+                isinstance(other, ListType) and
+                self.element_type.is_super_of(other.element_type))
+
+    @staticmethod
+    def make(element_type):
+        return ListType(element_type)
+
+
+class EmptyType(LittleScribeType):
+    """Empty sequence value."""
+
+    def is_super_of(self, other):
+        return isinstance(other, EmptyType)
+
+
+class NumberType(LittleScribeType):
     """Repersents a value that comes from a IntegerToken.
 
     Currently limited to non-negative integers, but that might change."""
@@ -65,26 +95,14 @@ class NumberType:
         return isinstance(other, (NumberType, IntegerType))
 
 
-class IntegerType:
+class IntegerType(NumberType):
 
     def is_super_of(self, other):
         return isinstance(other, IntegerType)
 
 
-# Planned, not immediate.
-class ListType:
-    """The basic sequence type."""
-
-    def __init__(self, element_type):
-        self.element_type = element_type
-
-    def is_super_of(self, other):
-        return (isinstance(other, ListType) and
-                self.element_type.is_super_of(other.element_type))
-
-
 # Possibilities:
-class UnionType:
+class UnionType(LittleScribeType):
 
     def __init__(self, unioned_types):
         self.unioned_types = unioned_types
@@ -101,7 +119,7 @@ class UnionType:
             return any_option_super_of(other)
 
 
-class ExpressionType:
+class ExpressionType(LittleScribeType):
 
     def __init__(self, result_type):
         self.result_type = result_type
@@ -111,7 +129,7 @@ class ExpressionType:
                 self.result_type.is_super_of(other.result_type))
 
 
-class StructureType:
+class StructureType(LittleScribeType):
 
     def __init__(self, field_types):
         self.field_types = field_types
@@ -119,14 +137,6 @@ class StructureType:
 
     def is_super_of(self, other):
         return self is other
-
-
-class GenericTypeClass:
-
-    def __init__(self):
-        # Generic over ... is ... .
-        # For all ... define ... .
-        # Function over ... taking ... to ... .
 
 
 def is_super(supertype, subtype):
@@ -139,15 +149,8 @@ def common_parent(left_type, right_type):
     return AnythingType()
 
 
-# I was going to have special things in the language for types, instead making
-# a type called Type and storing types in the global namespace. Then each type
-# is an instance that can be referenced, but has a single copy.
-# How does this work with type defintions. (... -> Type)
-
-# Type (type of types)
-# Anything - Number - Integer - Character - String
-# ex. ('Anything.', AnythingType(), type_type)
-def type_list():
+def create_type_list():
+    """Build a list of type definitions."""
     lst = []
     type_type = TypeType()
     def append(name, code, type=type_type):
@@ -157,3 +160,10 @@ def type_list():
     append('Anything.', AnythingType())
     append('Number.', NumberType())
     append('Integer.', IntegerType())
+    #append('Function Parameter list, to Return type. .',
+    #       FunctionType.make,
+    #       FunctionType([ListType.make(type_type)], type_type))
+    #append('List of Item type. .', ListType.make,
+    #       FunctionType([type_type], type_type))
+
+    return lst

@@ -101,6 +101,25 @@ class AddDefAction(Action):
         scope.add_definition(self.definition)
 
 
+# Should this be here?
+class ListObject:
+
+    def __init__(self, head, tail):
+        self.head = head
+        self.tail = tail
+
+    def to_under_list(self):
+        """Convert this to a python list."""
+        return [self.head] + self.tail.to_under_list()
+
+
+class EmptyList:
+
+    def to_under_list(self):
+        """Convert this to a python list."""
+        return list()
+
+
 def create_built_in_scope():
     """Returns a scope with all the built-in functions defined."""
     scope = Scope()
@@ -108,9 +127,18 @@ def create_built_in_scope():
     def add_text(text, code, type=None):
         scope.add_definition(Definition(string_to_signature(text), code, type))
 
+    #for definition in create_type_list():
+    #    scope.add_definition(definition)
     add_text('Define Head. to be Body. .', define_function)
     add_text('Add Left hand side. to Right hand side. .',
         lambda scope, left, right: left + right)
     add_text('Minus Left hand side. by Right hand side. .',
         lambda scope, left, right: left - right)
+    add_text('Put Head. onto Tail. .',
+        lambda scope, head, tail: ListObject(head, tail))
+    add_text('Head of List. .', lambda scope, list: list.head)
+    add_test('Tail of List. .', lambda scope, list: list.tail)
+    add_test('Empty list.', EmptyList())
+    add_test('Is This value. empty.',
+        lambda scope, value: isinstance(value, EmptyList))
     return scope
