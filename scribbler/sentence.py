@@ -117,5 +117,7 @@ class Sentence:
                 'Sentence.get_value: requires primitive Sentence.')
         return self._children[0].get_value()
 
+    # get_type(self): -> self._children[0].get_type()
+
 
 Sentence.ChildTypes = (Sentence, Token)

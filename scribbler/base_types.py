@@ -8,6 +8,13 @@ from abc import (
     )
 
 
+from parse import (
+    string_to_signature,
+    )
+from scope import (
+    Definition,
+    )
+
 class LittleScribeType(metaclass=ABCMeta):
     """The base type used to create other types."""
 
@@ -149,21 +156,21 @@ def common_parent(left_type, right_type):
     return AnythingType()
 
 
-def create_type_list():
-    """Build a list of type definitions."""
-    lst = []
-    type_type = TypeType()
-    def append(name, code, type=type_type):
-        lst.append(Definition(string_to_signature(name), code, type))
+type_type = TypeType()
 
-    append('Type.', type_type)
-    append('Anything.', AnythingType())
-    append('Number.', NumberType())
-    append('Integer.', IntegerType())
-    #append('Function Parameter list, to Return type. .',
-    #       FunctionType.make,
-    #       FunctionType([ListType.make(type_type)], type_type))
-    #append('List of Item type. .', ListType.make,
-    #       FunctionType([type_type], type_type))
 
-    return lst
+def type_def(text, code, type=type_type):
+    return Definition(string_to_signature(text), code, type)
+
+
+little_scribe_types = {
+    'type': type_def('Type.', type_type),
+    'anything': type_def('Anything.', AnythingType()),
+    'number': type_def('Number.', NumberType()),
+    'integer': type_def('Integer.', IntegerType()),
+    #'function': type_def('Function Parameter list, to Return type. .',
+    #    FunctionType.make,
+    #    FunctionType([ListType.make(type_type)], type_type)),
+    #'list': type_def('List of Item type. .',
+    #    ListType.make, FunctionType([type_type], type_type)),
+    }

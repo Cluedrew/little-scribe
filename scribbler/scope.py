@@ -85,7 +85,7 @@ class Scope:
 
         It must not conflict with any existing definition in the scope."""
         for existing in self._iter_definitions():
-            if existing.is_matching(definition):
+            if existing.is_match(definition):
                 raise ValueError('New definition conflicts with existing '
                                  'definition in scope.')
         else:

@@ -7,6 +7,9 @@ Built-ins are created simply by adding a Definition to the a scope. Use
 from parse import (
     string_to_signature,
     )
+from primitive import (
+    primitive_lookup,
+    )
 from scope import (
     Definition,
     Scope,
@@ -27,7 +30,7 @@ class Action:
 def evaluate(sentence, scope):
     """Evaluate a Sentence within a Scope."""
     if sentence.is_primitive():
-        return sentence.get_value()
+        return primitive_lookup(sentence).code
     match = scope.match_sentence(sentence)
     params = []
     # Define disables pre-evaluation.
@@ -72,6 +75,9 @@ def define_function(scope, head, body):
             local_scope.add_definition(new_def)
         # Head should be defined in the parent scope.
         return evaluate(body, local_scope)
+
+    #anything = little_scribe_types['anything']
+    #ftype = FunctionType([anything] * len(params), anything)
 
     return AddDefAction(Definition(head, eval_function))
 
@@ -134,11 +140,12 @@ def create_built_in_scope():
         lambda scope, left, right: left + right)
     add_text('Minus Left hand side. by Right hand side. .',
         lambda scope, left, right: left - right)
+
     add_text('Put Head. onto Tail. .',
         lambda scope, head, tail: ListObject(head, tail))
     add_text('Head of List. .', lambda scope, list: list.head)
-    add_test('Tail of List. .', lambda scope, list: list.tail)
-    add_test('Empty list.', EmptyList())
-    add_test('Is This value. empty.',
+    add_text('Tail of List. .', lambda scope, list: list.tail)
+    add_text('Empty list.', EmptyList())
+    add_text('Is This value. empty.',
         lambda scope, value: isinstance(value, EmptyList))
     return scope
