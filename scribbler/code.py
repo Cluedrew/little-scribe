@@ -4,6 +4,10 @@
 Built-ins are created simply by adding a Definition to the a scope. Use
 `create_built_in_scope` to get an instance of this scope."""
 
+from base_types import (
+    anything_type,
+    FunctionType,
+    )
 from parse import (
     string_to_signature,
     )
@@ -20,6 +24,7 @@ class LSRunningError(Exception):
     """Exception type for errors thrown by."""
     # In the future should be replaced by or hiddened behind a Little Scribe
     # error message.
+
 
 class Action:
 
@@ -76,10 +81,9 @@ def define_function(scope, head, body):
         # Head should be defined in the parent scope.
         return evaluate(body, local_scope)
 
-    #anything = little_scribe_types['anything']
-    #ftype = FunctionType([anything] * len(params), anything)
+    ftype = FunctionType([anything_type] * len(params), anything_type)
 
-    return AddDefAction(Definition(head, eval_function))
+    return AddDefAction(Definition(head, eval_function, ftype))
 
 
 def define_constant(scope, head, body):

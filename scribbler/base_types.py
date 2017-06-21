@@ -156,21 +156,31 @@ def common_parent(left_type, right_type):
     return AnythingType()
 
 
-type_type = TypeType()
+_type_type = TypeType()
 
 
-def type_def(text, code, type=type_type):
+def type_def(text, code, type=_type_type):
     return Definition(string_to_signature(text), code, type)
 
 
+type_type = type_def('Type.', _type_type)
+anything_type = type_def('Anything.', AnythingType())
+number_type = type_def('Number.', NumberType())
+integer_type = type_def('Integer.', IntegerType())
+function_over = type_def(
+    'Function Parameter list. to Return type. .',
+    FunctionType.make,
+    FunctionType([ListType.make(_type_type)], _type_type))
+list_over = type_def('List of Item type. .',
+    ListType.make, FunctionType([_type_type], _type_type))
+
+
+# If we ever just need to go through all types:
 little_scribe_types = {
-    'type': type_def('Type.', type_type),
-    'anything': type_def('Anything.', AnythingType()),
-    'number': type_def('Number.', NumberType()),
-    'integer': type_def('Integer.', IntegerType()),
-    #'function': type_def('Function Parameter list, to Return type. .',
-    #    FunctionType.make,
-    #    FunctionType([ListType.make(type_type)], type_type)),
-    #'list': type_def('List of Item type. .',
-    #    ListType.make, FunctionType([type_type], type_type)),
+    'type': type_type,
+    'anything': anything_type,
+    'number': number_type,
+    'integer': integer_type,
+    'function': function_over,
+    'list': list_over,
     }
